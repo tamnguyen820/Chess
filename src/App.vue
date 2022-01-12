@@ -1,13 +1,19 @@
 <template>
-  <Chess />
+  <div class="chess">
+    <ChessGame />
+  </div>
 </template>
 
 <script>
-import Chess from "./Chess.vue";
+import ChessGame from "./components/ChessGame.vue";
 export default {
-  components: { Chess },
+  components: { ChessGame },
 };
 </script>
 
-<style scoped>
+<style  lang="scss" scoped>
+.chess {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
 </style>
