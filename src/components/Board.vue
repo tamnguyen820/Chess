@@ -90,20 +90,12 @@ import { mapGetters, mapMutations } from "vuex";
 import Piece from "./Piece.vue";
 
 export default {
-  created() {
-    this.configuration = this.boardConfiguration();
-    this.boardImage = this.getBoardImage();
-    this.legalMoves = this.setupLegalMoves();
-  },
   components: {
     Piece,
   },
   data() {
     return {
       srcURL: "./assets/images/board/",
-      boardImage: "",
-      legalMoves: [],
-      configuration: [],
       currentDragOverSquare: null,
       moveHighlightSquares: [],
       tempMoveHighlightSquare: null,
@@ -135,7 +127,6 @@ export default {
     };
   },
   computed: {
-    // Change here
     ...mapGetters({
       boardTheme: "settings/getBoardTheme",
       showLegal: "settings/showLegalMoves",
@@ -143,22 +134,10 @@ export default {
 
       getBoard: "game/getBoard",
       getLegalMoves: "game/getLegalMoves",
-      turnColor: "game/getTurn",
+      getTurn: "game/getTurn",
     }),
-  },
-  methods: {
-    ...mapMutations({
-      pushMove: "game/pushMove",
-    }),
-    getPromotionOptions() {
-      const turn = this.turnColor;
-      return this.promotionOptions.map((option) => turn + option);
-    },
-    setPromotionOption(option) {
-      const op = option.toLowerCase()[1];
-      this.commitMove(this.tempMoveHighlightSquare, this.promotionSquare, op);
-    },
-    getBoardImage() {
+
+    boardImage() {
       const extension = this.boardTheme.substr(this.boardTheme.length - 4);
       var subdir = extension === ".svg" ? "svg/" : "";
       this.boardImg = this.srcURL + subdir + this.boardTheme;
@@ -166,56 +145,20 @@ export default {
       return imageURL;
     },
 
-    setupLegalMoves() {
-      const moves = {};
-      // Change here
-      for (let move of this.getLegalMoves) {
-        const from = this.translateToId(move.from);
-        const to = this.translateToId(move.to);
-        if (moves[from]) {
-          moves[from].push(to);
-        } else {
-          moves[from] = [to];
-        }
-        if (move.promotion) {
-          if (this.promotionMoves[from]) {
-            this.promotionMoves[from].push(to);
+    configuration() {
+      const testBoard = this.$store.getters["game/getRealBoard"];
+      for (var r = 0; r < testBoard.length; r++) {
+        var row = testBoard[r];
+        for (var c = 0; c < row.length; c++) {
+          if (row[c]) {
+            row[c]["squareID"] = (c + 1) * 10 + (r + 1 - 8);
           } else {
-            this.promotionMoves[from] = [to];
+            row[c] = { squareID: (c + 1) * 10 + (r + 1 - 8) };
           }
         }
       }
-      return moves;
-    },
+      console.log(testBoard);
 
-    translateToNotation(square) {
-      const firstChar = String.fromCharCode(
-        Math.floor(square / 10) - 1 + "a".charCodeAt()
-      );
-      const secondChar = String(Math.floor(square % 10));
-      return firstChar + secondChar;
-    },
-    translateToId(square) {
-      const firstDigit = square.charCodeAt(0) - "a".charCodeAt() + 1;
-      const secondDigit = parseInt(square[1], 10);
-      return firstDigit * 10 + secondDigit;
-    },
-    legalHints(id) {
-      const hints = this.legalMoves;
-      if (hints[id]) {
-        return hints[id];
-      }
-      return [];
-    },
-    revealHints(event, id) {
-      if (event.which === 1) {
-        this.hints = this.legalHints(id);
-      }
-    },
-    clearHints() {
-      this.hints = [];
-    },
-    boardConfiguration() {
       const pieceArr = [];
       var file = 1;
       var rank = 8;
@@ -249,6 +192,69 @@ export default {
       console.log(pieceArr);
       return pieceArr;
     },
+
+    legalMoves() {
+      const moves = {};
+      for (let move of this.getLegalMoves) {
+        const from = this.translateToId(move.from);
+        const to = this.translateToId(move.to);
+        if (moves[from]) {
+          moves[from].push(to);
+        } else {
+          moves[from] = [to];
+        }
+        if (move.promotion) {
+          if (this.promotionMoves[from]) {
+            this.promotionMoves[from].push(to);
+          } else {
+            this.promotionMoves[from] = [to];
+          }
+        }
+      }
+      return moves;
+    },
+  },
+  methods: {
+    ...mapMutations({
+      pushMove: "game/pushMove",
+    }),
+    getPromotionOptions() {
+      const turn = this.getTurn;
+      const options = this.promotionOptions.map((option) => turn + option);
+      return options;
+    },
+    setPromotionOption(option) {
+      const op = option.toLowerCase()[1];
+      this.commitMove(this.tempMoveHighlightSquare, this.promotionSquare, op);
+    },
+
+    translateToNotation(square) {
+      const firstChar = String.fromCharCode(
+        Math.floor(square / 10) - 1 + "a".charCodeAt()
+      );
+      const secondChar = String(Math.floor(square % 10));
+      return firstChar + secondChar;
+    },
+    translateToId(square) {
+      const firstDigit = square.charCodeAt(0) - "a".charCodeAt() + 1;
+      const secondDigit = parseInt(square[1], 10);
+      return firstDigit * 10 + secondDigit;
+    },
+    legalHints(id) {
+      const hints = this.legalMoves;
+      if (hints[id]) {
+        return hints[id];
+      }
+      return [];
+    },
+    revealHints(event, id) {
+      if (event.which === 1) {
+        this.hints = this.legalHints(id);
+      }
+    },
+    clearHints() {
+      this.hints = [];
+    },
     startDrag(event, item) {
       event.dataTransfer.dropEffect = "move";
       event.dataTransfer.effectAllowed = "move";
@@ -280,8 +286,6 @@ export default {
       }
     },
     commitMove(id1, id2, promotion = null) {
-      // Change here
-      console.log("Before move", this.getLegalMoves);
       if (this.promotionMoves[id1] && this.promotionMoves[id1].includes(id2)) {
         if (!promotion) {
           this.promotionSquare = id2;
@@ -298,8 +302,6 @@ export default {
         this.clearHints();
         this.promotionMoves = [];
         this.promotionSquare = null;
-        this.configuration = this.boardConfiguration();
-        this.legalMoves = this.setupLegalMoves();
       }
       if (this.legalMoves[id1] && this.legalMoves[id1].includes(id2)) {
         this.pushMove({
@@ -318,8 +320,6 @@ export default {
         this.setMoveHighlight(id1);
         this.setMoveHighlight(id2);
         this.clearHints();
-        this.configuration = this.boardConfiguration();
-        this.legalMoves = this.setupLegalMoves();
       } else {
         const square = this.configuration.find(
           (element) => element.squareID === id2
@@ -328,9 +328,6 @@ export default {
           this.setTempMoveHighlight(id2);
         }
       }
-      // Change here
-      console.log("After move", this.getLegalMoves);
-      console.log("___________________________________");
     },
     setTempMoveHighlight(id) {
       this.tempMoveHighlightSquare = id;
@@ -462,7 +459,7 @@ $legal-circle-take-border: max(calc($board-size/80), calc($board-size-min/80));
       }
     }
     .drag-over {
-      // outline-offset: -($drag-outline-size);
+      outline-offset: calc(-1 * $drag-outline-size);
       outline: $drag-outline-size solid $drag-outline-color;
     }
     .move-highlight {
