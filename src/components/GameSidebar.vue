@@ -64,7 +64,7 @@ $background-color: #f0f0f0;
 $move-underline-color: #72a4d4;
 $move-second-background: #f8f8f8;
 
-$scrollbar-color: grey;
+$scrollbar-color: rgb(158, 158, 158);
 
 $button-color: #dbd9d7;
 $button-shadow-color: #bdbcb8;
@@ -75,7 +75,6 @@ $button-hover-color: lightblue;
   width: 100%;
   background-color: $background-color;
   font-family: Arial, Helvetica, sans-serif;
-  font-size: 1rem;
   display: flex;
   flex-direction: column;
   border-radius: 5px;
@@ -85,7 +84,7 @@ $button-hover-color: lightblue;
   }
 
   ::-webkit-scrollbar {
-    width: 10px;
+    width: 7px;
   }
   ::-webkit-scrollbar-thumb {
     background-color: $scrollbar-color;
@@ -98,6 +97,7 @@ $button-hover-color: lightblue;
   }
 
   .turn-area {
+    font-size: 0.95rem;
     height: 70%;
     width: 100%;
     background-color: white;

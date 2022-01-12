@@ -1,5 +1,5 @@
 <template>
-  <!-- <div class="game-layout">
+  <div class="game-layout">
     <GameLayout>
       <template v-slot:board>
         <Board />
@@ -8,8 +8,8 @@
         <GameSidebar />
       </template>
     </GameLayout>
-  </div> -->
-  <Board />
+  </div>
+  <!-- <Board /> -->
 </template>
 
 <script>
@@ -42,7 +42,7 @@ export default {
 
 <style lang="scss" scoped>
 .game-layout {
-  height: 95vh;
+  height: 97vh;
   width: 80vw;
   margin: auto;
 }

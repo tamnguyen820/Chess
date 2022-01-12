@@ -1,7 +1,6 @@
 <template>
-  <div class="board-container">
+  <div class="board-container" id="board-container">
     <div
-      id="board"
       class="board unselectable"
       :style="{ backgroundImage: 'url(' + boardImage + ')' }"
     >
@@ -96,6 +95,15 @@ export default {
   created() {
     this.createBoardModel();
   },
+  mounted() {
+    this.$nextTick(() => {
+      window.addEventListener("resize", this.onResize);
+    });
+    this.resizeBoard(window.innerWidth, window.innerHeight);
+  },
+  beforeUnmount() {
+    window.removeEventListener("resize", this.onResize);
+  },
   components: {
     Piece,
   },
@@ -131,6 +139,7 @@ export default {
         h1: [{ letter: "h", class: "coord-file coord-light" }],
       },
       promotionOptions: ["Q", "N", "R", "B"],
+      currentBoardSize: null,
     };
   },
   computed: {
@@ -164,8 +173,8 @@ export default {
           }
         }
       }
-      console.log(this.boardModel);
-      console.log(this.legalMoves);
+      // console.log(this.boardModel);
+      // console.log(this.legalMoves);
 
       return this.boardModel;
     },
@@ -192,6 +201,24 @@ export default {
     },
   },
   methods: {
+    onResize() {
+      this.resizeBoard(window.innerWidth, window.innerHeight);
+    },
+    resizeBoard(width, height) {
+      const minBoardSize = 400;
+      var boardSize = Math.floor(0.8 * Math.min(width, height));
+      boardSize -= boardSize % 8;
+      if (
+        boardSize <= minBoardSize ||
+        (this.currentBoardSize && boardSize === this.currentBoardSize)
+      ) {
+        return;
+      }
+      this.currentBoardSize = boardSize;
+      // Change styles
+      const boardContainer = document.getElementById("board-container");
+      boardContainer.style.setProperty("--board-size", `${boardSize}px`);
+    },
     ...mapMutations({
       pushMove: "game/pushMove",
     }),
@@ -253,8 +280,6 @@ export default {
       this.clearDragOutline();
     },
     moveClick(id) {
-      // console.log(id);
-      // console.log(this.tempMoveHighlightSquare);
       if (this.tempMoveHighlightSquare && id !== this.tempMoveHighlightSquare) {
         this.commitMove(this.tempMoveHighlightSquare, id);
         return;
@@ -337,37 +362,56 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-$drag-outline-color: #d1e8e4;
-$move-highlight-color: #d8e04a;
-$manual-highlight-color: #d4715f;
-$coord-light-color: #779952;
-$coord-dark-color: #edeed1;
-$board-size-min: 400px;
-$board-size: min(70vh, 70vw);
-$coord-size: max(calc($board-size/40), calc($board-size-min/40));
-$drag-outline-size: max(calc($board-size/120), calc($board-size-min/120));
-$legal-circle-color: #abab95;
-$legal-circle-size: max(calc($board-size/25), calc($board-size-min/25));
-$legal-circle-take-size: max(calc($board-size/10), calc($board-size-min/10));
-$legal-circle-take-border: max(calc($board-size/80), calc($board-size-min/80));
-
 .board-container {
+  --drag-outline-color: #d1e8e4;
+  --move-highlight-color: #d8e04a;
+  --manual-highlight-color: #d4715f;
+  --coord-light-color: #779952;
+  --coord-dark-color: #edeed1;
+  --legal-circle-color: #abab95;
+
+  --board-size-min: 400px;
+  --board-size: min(80vh, 80vw);
+  --coord-size: max(
+    calc(var(--board-size) / 40),
+    calc(var(--board-size-min) / 40)
+  );
+  --drag-outline-size: max(
+    calc(var(--board-size) / 120),
+    calc(var(--board-size-min) / 120)
+  );
+  --legal-circle-size: max(
+    calc(var(--board-size) / 25),
+    calc(var(--board-size-min) / 25)
+  );
+  --legal-circle-take-size: max(
+    calc(var(--board-size) / 10),
+    calc(var(--board-size-min) / 10)
+  );
+  --legal-circle-take-border: max(
+    calc(var(--board-size) / 80),
+    calc(var(--board-size-min) / 80)
+  );
+
   box-sizing: border-box;
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
-  // position: relative;
+  // justify-content: center;
+  // width: 100%;
+  // height: 100%;
+  height: 0;
+  padding-bottom: 100%;
   width: 100%;
-  height: 100%;
   .board {
+    margin: auto;
     touch-action: none;
     border-radius: 5px;
     background-repeat: no-repeat;
     background-size: contain;
-    // min-width: $board-size-min;
-    // min-height: $board-size-min;
-    width: $board-size;
-    height: $board-size;
+    min-width: var(--board-size-min);
+    min-height: var(--board-size-min);
+    width: var(--board-size);
+    height: var(--board-size);
     display: flex;
     flex-direction: column;
     flex-wrap: wrap;
@@ -386,7 +430,7 @@ $legal-circle-take-border: max(calc($board-size/80), calc($board-size-min/80));
             position: absolute;
             font-weight: 600;
             font-family: Arial, Helvetica, sans-serif;
-            font-size: $coord-size;
+            font-size: var(--coord-size);
           }
           .coord-rank {
             margin-top: 5%;
@@ -397,17 +441,17 @@ $legal-circle-take-border: max(calc($board-size/80), calc($board-size-min/80));
             margin-left: 82%;
           }
           .coord-light {
-            color: $coord-light-color;
+            color: var(--coord-light-color);
           }
           .coord-dark {
-            color: $coord-dark-color;
+            color: var(--coord-dark-color);
           }
           .legal-circle {
             position: absolute;
-            background: $legal-circle-color;
+            background: var(--legal-circle-color);
             opacity: 0.7;
-            width: $legal-circle-size;
-            height: $legal-circle-size;
+            width: var(--legal-circle-size);
+            height: var(--legal-circle-size);
             border-radius: 50%;
             margin-top: 34%;
             margin-left: 34%;
@@ -416,23 +460,23 @@ $legal-circle-take-border: max(calc($board-size/80), calc($board-size-min/80));
             position: absolute;
             background: transparent;
             opacity: 0.7;
-            width: $legal-circle-take-size;
-            height: $legal-circle-take-size;
+            width: var(--legal-circle-take-size);
+            height: var(--legal-circle-take-size);
             border-radius: 50%;
             border-style: solid;
-            border-color: $legal-circle-color;
-            border-width: $legal-circle-take-border;
+            border-color: var(--legal-circle-color);
+            border-width: var(--legal-circle-take-border);
           }
           .promotion-options {
             position: absolute;
             background: white;
             z-index: 100;
-            width: calc($board-size/8);
-            height: calc($board-size/2);
+            width: calc(var(--board-size) / 8);
+            height: calc(var(--board-size) / 2);
             box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
             .option {
-              width: calc($board-size/8);
-              height: calc($board-size/8);
+              width: calc(var(--board-size) / 8);
+              height: calc(var(--board-size) / 8);
               &:hover {
                 background: lightblue;
               }
@@ -441,15 +485,15 @@ $legal-circle-take-border: max(calc($board-size/80), calc($board-size-min/80));
         }
       }
       .drag-over {
-        outline-offset: calc(-1 * $drag-outline-size);
-        outline: $drag-outline-size solid $drag-outline-color;
+        outline-offset: calc(-1 * var(--drag-outline-size));
+        outline: var(--drag-outline-size) solid var(--drag-outline-color);
       }
       .move-highlight {
-        background-color: $move-highlight-color;
+        background-color: var(--move-highlight-color);
         opacity: 0.9;
       }
       .manual-highlight {
-        background-color: $manual-highlight-color;
+        background-color: var(--manual-highlight-color);
         opacity: 0.9;
       }
     }
