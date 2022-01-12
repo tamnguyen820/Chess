@@ -5,73 +5,75 @@
       class="board unselectable"
       :style="{ backgroundImage: 'url(' + boardImage + ')' }"
     >
-      <div
-        class="square"
-        :class="{
-          'drag-over': p.squareID === currentDragOverSquare,
-          'move-highlight':
-            moveHighlightSquares.includes(p.squareID) ||
-            p.squareID === tempMoveHighlightSquare,
-          'manual-highlight': manualHighlightSquares[p.squareID],
-        }"
-        v-for="p in configuration"
-        :key="p.squareID"
-        @drop="onDrop(p.squareID)"
-        @dragenter.prevent
-        @dragover.prevent
-        @dragover="dragOver(p.squareID)"
-        @dragend="clearDragOutline"
-        @dragleave="clearDragOutline"
-        oncontextmenu="return false;"
-        @mousedown="setManualHighlight($event, p.squareID)"
-        @click="moveClick(p.squareID)"
-      >
-        <!-- Coord -->
+      <div class="rank" v-for="rank in configuration" :key="rank">
         <div
-          v-if="showCoordinates && coords[p.squareID]"
-          class="relative-container"
+          class="square"
+          :class="{
+            'drag-over': p.squareID === currentDragOverSquare,
+            'move-highlight':
+              moveHighlightSquares.includes(p.squareID) ||
+              p.squareID === tempMoveHighlightSquare,
+            'manual-highlight': manualHighlightSquares[p.squareID],
+          }"
+          v-for="p in rank"
+          :key="p.squareID"
+          @drop="onDrop(p.squareID)"
+          @dragenter.prevent
+          @dragover.prevent
+          @dragover="dragOver(p.squareID)"
+          @dragend="clearDragOutline"
+          @dragleave="clearDragOutline"
+          oncontextmenu="return false;"
+          @mousedown="setManualHighlight($event, p.squareID)"
+          @click="moveClick(p.squareID)"
         >
+          <!-- Coord -->
           <div
-            class="coord"
-            v-for="coord in coords[p.squareID]"
-            :key="coord"
-            :class="coord.class"
+            v-if="showCoordinates && coords[p.squareID]"
+            class="relative-container"
           >
-            {{ coord.letter }}
-          </div>
-        </div>
-
-        <!-- Hints -->
-        <div
-          v-if="showLegal && hints.includes(p.squareID)"
-          class="relative-container"
-        >
-          <div
-            :class="p.pieceName ? 'legal-circle-take' : 'legal-circle'"
-          ></div>
-        </div>
-
-        <!-- Promotion -->
-        <div v-if="p.squareID === promotionSquare" class="relative-container">
-          <div class="promotion-options">
             <div
-              v-for="option in getPromotionOptions()"
-              :key="option"
-              class="option"
-              @click="setPromotionOption(option)"
+              class="coord"
+              v-for="coord in coords[p.squareID]"
+              :key="coord"
+              :class="coord.class"
             >
-              <Piece :pieceName="option" :allowDrag="false" />
+              {{ coord.letter }}
             </div>
           </div>
-        </div>
 
-        <!-- Piece -->
-        <Piece
-          v-if="p.pieceName"
-          :pieceName="p.pieceName"
-          @dragstart="startDrag($event, p.squareID)"
-          @mousedown="revealHints($event, p.squareID)"
-        />
+          <!-- Hints -->
+          <div
+            v-if="showLegal && hints.includes(p.squareID)"
+            class="relative-container"
+          >
+            <div
+              :class="p.pieceName ? 'legal-circle-take' : 'legal-circle'"
+            ></div>
+          </div>
+
+          <!-- Promotion -->
+          <div v-if="p.squareID === promotionSquare" class="relative-container">
+            <div class="promotion-options">
+              <div
+                v-for="option in getPromotionOptions()"
+                :key="option"
+                class="option"
+                @click="setPromotionOption(option)"
+              >
+                <Piece :pieceName="option" :allowDrag="false" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Piece -->
+          <Piece
+            v-if="p.pieceName"
+            :pieceName="p.pieceName"
+            @dragstart="startDrag($event, p.squareID)"
+            @mousedown="revealHints($event, p.squareID)"
+          />
+        </div>
       </div>
     </div>
   </div>
@@ -85,17 +87,22 @@
 //  Sound effects?
 
 //  UI components
+//  Refactor board
 
 import { mapGetters, mapMutations } from "vuex";
 import Piece from "./Piece.vue";
 
 export default {
+  created() {
+    this.createBoardModel();
+  },
   components: {
     Piece,
   },
   data() {
     return {
       srcURL: "./assets/images/board/",
+      boardModel: [],
       currentDragOverSquare: null,
       moveHighlightSquares: [],
       tempMoveHighlightSquare: null,
@@ -104,24 +111,24 @@ export default {
       promotionSquare: null,
       hints: [],
       coords: {
-        18: [{ letter: "8", class: "coord-rank coord-light" }],
-        17: [{ letter: "7", class: "coord-rank coord-dark" }],
-        16: [{ letter: "6", class: "coord-rank coord-light" }],
-        15: [{ letter: "5", class: "coord-rank coord-dark" }],
-        14: [{ letter: "4", class: "coord-rank coord-light" }],
-        13: [{ letter: "3", class: "coord-rank coord-dark" }],
-        12: [{ letter: "2", class: "coord-rank coord-light" }],
-        11: [
+        a8: [{ letter: "8", class: "coord-rank coord-light" }],
+        a7: [{ letter: "7", class: "coord-rank coord-dark" }],
+        a6: [{ letter: "6", class: "coord-rank coord-light" }],
+        a5: [{ letter: "5", class: "coord-rank coord-dark" }],
+        a4: [{ letter: "4", class: "coord-rank coord-light" }],
+        a3: [{ letter: "3", class: "coord-rank coord-dark" }],
+        a2: [{ letter: "2", class: "coord-rank coord-light" }],
+        a1: [
           { letter: "1", class: "coord-rank coord-dark" },
           { letter: "a", class: "coord-file coord-dark" },
         ],
-        21: [{ letter: "b", class: "coord-file coord-light" }],
-        31: [{ letter: "c", class: "coord-file coord-dark" }],
-        41: [{ letter: "d", class: "coord-file coord-light" }],
-        51: [{ letter: "e", class: "coord-file coord-dark" }],
-        61: [{ letter: "f", class: "coord-file coord-light" }],
-        71: [{ letter: "g", class: "coord-file coord-dark" }],
-        81: [{ letter: "h", class: "coord-file coord-light" }],
+        b1: [{ letter: "b", class: "coord-file coord-light" }],
+        c1: [{ letter: "c", class: "coord-file coord-dark" }],
+        d1: [{ letter: "d", class: "coord-file coord-light" }],
+        e1: [{ letter: "e", class: "coord-file coord-dark" }],
+        f1: [{ letter: "f", class: "coord-file coord-light" }],
+        g1: [{ letter: "g", class: "coord-file coord-dark" }],
+        h1: [{ letter: "h", class: "coord-file coord-light" }],
       },
       promotionOptions: ["Q", "N", "R", "B"],
     };
@@ -146,58 +153,28 @@ export default {
     },
 
     configuration() {
-      const testBoard = this.$store.getters["game/getRealBoard"];
-      for (var r = 0; r < testBoard.length; r++) {
-        var row = testBoard[r];
-        for (var c = 0; c < row.length; c++) {
-          if (row[c]) {
-            row[c]["squareID"] = (c + 1) * 10 + (r + 1 - 8);
-          } else {
-            row[c] = { squareID: (c + 1) * 10 + (r + 1 - 8) };
+      const board = this.getBoard;
+      for (var r = 0; r < 8; r++) {
+        for (var f = 0; f < 8; f++) {
+          if (board[r][f]) {
+            this.boardModel[r][f]["pieceName"] =
+              board[r][f]["color"] + board[r][f]["type"].toUpperCase();
+          } else if (this.boardModel[r][f]["pieceName"]) {
+            this.boardModel[r][f]["pieceName"] = null;
           }
         }
       }
-      console.log(testBoard);
+      console.log(this.boardModel);
+      console.log(this.legalMoves);
 
-      const pieceArr = [];
-      var file = 1;
-      var rank = 8;
-      for (let c of this.getBoard) {
-        if (c === "/") {
-          // Next rank
-          file = 1;
-          rank--;
-          continue;
-        }
-        var squareID = file * 10 + rank;
-        if (!isNaN(c)) {
-          // Empty squares
-          var num = parseInt(c);
-          for (var i = 0; i < num; i++) {
-            pieceArr.push({ squareID: squareID + i * 10 });
-          }
-          file += num;
-          continue;
-        }
-        // Piece
-        var color = c === c.toUpperCase() ? "w" : "b";
-        var pieceName = color + c.toUpperCase();
-        pieceArr.push({
-          pieceName: pieceName,
-          squareID: squareID,
-        });
-        file++;
-      }
-      console.log(this.getBoard);
-      console.log(pieceArr);
-      return pieceArr;
+      return this.boardModel;
     },
 
     legalMoves() {
       const moves = {};
       for (let move of this.getLegalMoves) {
-        const from = this.translateToId(move.from);
-        const to = this.translateToId(move.to);
+        const from = move.from;
+        const to = move.to;
         if (moves[from]) {
           moves[from].push(to);
         } else {
@@ -218,6 +195,20 @@ export default {
     ...mapMutations({
       pushMove: "game/pushMove",
     }),
+    createBoardModel() {
+      const files = "abcdefgh";
+      const ranks = "87654321";
+      for (var r = 0; r < 8; r++) {
+        const rank = [];
+        for (var f = 0; f < 8; f++) {
+          rank.push({
+            pieceName: null,
+            squareID: files[f] + ranks[r],
+          });
+        }
+        this.boardModel.push(rank);
+      }
+    },
     getPromotionOptions() {
       const turn = this.getTurn;
       const options = this.promotionOptions.map((option) => turn + option);
@@ -228,18 +219,6 @@ export default {
       this.commitMove(this.tempMoveHighlightSquare, this.promotionSquare, op);
     },
 
-    translateToNotation(square) {
-      const firstChar = String.fromCharCode(
-        Math.floor(square / 10) - 1 + "a".charCodeAt()
-      );
-      const secondChar = String(Math.floor(square % 10));
-      return firstChar + secondChar;
-    },
-    translateToId(square) {
-      const firstDigit = square.charCodeAt(0) - "a".charCodeAt() + 1;
-      const secondDigit = parseInt(square[1], 10);
-      return firstDigit * 10 + secondDigit;
-    },
     legalHints(id) {
       const hints = this.legalMoves;
       if (hints[id]) {
@@ -274,13 +253,17 @@ export default {
       this.clearDragOutline();
     },
     moveClick(id) {
+      // console.log(id);
+      // console.log(this.tempMoveHighlightSquare);
       if (this.tempMoveHighlightSquare && id !== this.tempMoveHighlightSquare) {
         this.commitMove(this.tempMoveHighlightSquare, id);
         return;
       }
-      const square = this.configuration.find(
-        (element) => element.squareID === id
+      // TEMP
+      const rank = this.configuration.find((rank) =>
+        rank.find((square) => square.squareID === id)
       );
+      const square = rank.find((square) => square.squareID === id);
       if (square.pieceName) {
         this.setTempMoveHighlight(id);
       }
@@ -292,8 +275,8 @@ export default {
           return;
         }
         this.pushMove({
-          from: this.translateToNotation(id1),
-          to: this.translateToNotation(id2),
+          from: id1,
+          to: id2,
           promotion: promotion,
         });
         this.clearMoveHighlights();
@@ -305,25 +288,19 @@ export default {
       }
       if (this.legalMoves[id1] && this.legalMoves[id1].includes(id2)) {
         this.pushMove({
-          from: this.translateToNotation(id1),
-          to: this.translateToNotation(id2),
+          from: id1,
+          to: id2,
         });
-        // const start = this.configuration.find(
-        //   (element) => element.squareID === id1
-        // );
-        // const end = this.configuration.find(
-        //   (element) => element.squareID === id2
-        // );
-        // end.pieceName = start.pieceName;
-        // delete start.pieceName;
         this.clearMoveHighlights();
         this.setMoveHighlight(id1);
         this.setMoveHighlight(id2);
         this.clearHints();
       } else {
-        const square = this.configuration.find(
-          (element) => element.squareID === id2
+        // TEMP
+        const rank = this.configuration.find((rank) =>
+          rank.find((square) => square.squareID === id2)
         );
+        const square = rank.find((square) => square.squareID === id2);
         if (square.pieceName) {
           this.setTempMoveHighlight(id2);
         }
@@ -375,6 +352,7 @@ $legal-circle-take-size: max(calc($board-size/10), calc($board-size-min/10));
 $legal-circle-take-border: max(calc($board-size/80), calc($board-size-min/80));
 
 .board-container {
+  box-sizing: border-box;
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
@@ -391,84 +369,89 @@ $legal-circle-take-border: max(calc($board-size/80), calc($board-size-min/80));
     width: $board-size;
     height: $board-size;
     display: flex;
+    flex-direction: column;
     flex-wrap: wrap;
-    .square {
-      // flex: 0 0 12.4999%;
-      // height: 12.4999%;
-      flex: 0 0 calc($board-size/8);
-      height: calc($board-size/8);
-      .relative-container {
-        position: relative;
-        .coord {
-          z-index: 0;
-          position: absolute;
-          font-weight: 600;
-          font-family: Arial, Helvetica, sans-serif;
-          font-size: $coord-size;
-        }
-        .coord-rank {
-          margin-top: 5%;
-          margin-left: 5%;
-        }
-        .coord-file {
-          margin-top: 72%;
-          margin-left: 82%;
-        }
-        .coord-light {
-          color: $coord-light-color;
-        }
-        .coord-dark {
-          color: $coord-dark-color;
-        }
-        .legal-circle {
-          position: absolute;
-          background: $legal-circle-color;
-          opacity: 0.7;
-          width: $legal-circle-size;
-          height: $legal-circle-size;
-          border-radius: 50%;
-          margin-top: 34%;
-          margin-left: 34%;
-        }
-        .legal-circle-take {
-          position: absolute;
-          background: transparent;
-          opacity: 0.7;
-          width: $legal-circle-take-size;
-          height: $legal-circle-take-size;
-          border-radius: 50%;
-          border-style: solid;
-          border-color: $legal-circle-color;
-          border-width: $legal-circle-take-border;
-        }
-        .promotion-options {
-          position: absolute;
-          background: white;
-          z-index: 100;
-          width: calc($board-size/8);
-          height: calc($board-size/2);
-          box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
-          .option {
+    .rank {
+      display: flex;
+      flex-direction: row;
+      width: 100%;
+      height: 12.5%;
+      .square {
+        flex: 0 0 12.5%;
+        height: 100%;
+        .relative-container {
+          position: relative;
+          .coord {
+            z-index: 0;
+            position: absolute;
+            font-weight: 600;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: $coord-size;
+          }
+          .coord-rank {
+            margin-top: 5%;
+            margin-left: 5%;
+          }
+          .coord-file {
+            margin-top: 72%;
+            margin-left: 82%;
+          }
+          .coord-light {
+            color: $coord-light-color;
+          }
+          .coord-dark {
+            color: $coord-dark-color;
+          }
+          .legal-circle {
+            position: absolute;
+            background: $legal-circle-color;
+            opacity: 0.7;
+            width: $legal-circle-size;
+            height: $legal-circle-size;
+            border-radius: 50%;
+            margin-top: 34%;
+            margin-left: 34%;
+          }
+          .legal-circle-take {
+            position: absolute;
+            background: transparent;
+            opacity: 0.7;
+            width: $legal-circle-take-size;
+            height: $legal-circle-take-size;
+            border-radius: 50%;
+            border-style: solid;
+            border-color: $legal-circle-color;
+            border-width: $legal-circle-take-border;
+          }
+          .promotion-options {
+            position: absolute;
+            background: white;
+            z-index: 100;
             width: calc($board-size/8);
-            height: calc($board-size/8);
-            &:hover {
-              background: lightblue;
+            height: calc($board-size/2);
+            box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
+            .option {
+              width: calc($board-size/8);
+              height: calc($board-size/8);
+              &:hover {
+                background: lightblue;
+              }
             }
           }
         }
       }
-    }
-    .drag-over {
-      outline-offset: calc(-1 * $drag-outline-size);
-      outline: $drag-outline-size solid $drag-outline-color;
-    }
-    .move-highlight {
-      background-color: $move-highlight-color;
-      opacity: 0.9;
-    }
-    .manual-highlight {
-      background-color: $manual-highlight-color;
-      opacity: 0.9;
+      .drag-over {
+        outline-offset: calc(-1 * $drag-outline-size);
+        outline: $drag-outline-size solid $drag-outline-color;
+      }
+      .move-highlight {
+        background-color: $move-highlight-color;
+        opacity: 0.9;
+      }
+      .manual-highlight {
+        background-color: $manual-highlight-color;
+        opacity: 0.9;
+      }
     }
   }
 }
