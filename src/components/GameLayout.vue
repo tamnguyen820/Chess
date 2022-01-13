@@ -24,29 +24,29 @@ export default {};
 </script>
 
 <style lang="scss" scoped>
-// So messed up
-// $layout-size: min();
 .wrapper {
   display: flex;
   flex-direction: row;
-  justify-content: space-between;
+  justify-content: center;
   height: 100%;
   width: 100%;
   .main-area {
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
-    width: 68%;
+    justify-content: space-around;
+    // width: 68%;
+    margin-right: max(2%, 10px);
     .player {
-      height: 7%;
+      height: 5%;
       background-color: blue;
-    }
-    .board {
-      height: 80%;
     }
   }
   .side-bar {
     height: 100%;
+    // min-width: 25vw;
+    // max-width: 30vw;
+    min-width: 200px;
+    min-height: 400px;
     width: 30%;
   }
 }

@@ -12,6 +12,7 @@ export const game = {
     return {
       chessGame: null,
       fen: "",
+      board: [],
       turn: "",
       legalMoves: [],
       lastMove: {},
@@ -27,9 +28,11 @@ export const game = {
 
     updateGame(state) {
       state.fen = state.chessGame.fen()
+      state.board = state.chessGame.board()
       state.legalMoves = state.chessGame.moves({ verbose: true })
       state.gameOver = state.chessGame.game_over()
       state.history = state.chessGame.history({ verbose: true })
+      state.turn = state.chessGame.turn()
     },
 
     createNewGame(state) {
@@ -53,9 +56,11 @@ export const game = {
     ABC(state) {
       return abc(state);
     },
+    getFen(state) {
+      return state.fen
+    },
     getBoard(state) {
-      console.log(state.chessGame.board())
-      return state.fen.split(" ")[0]
+      return state.board
     },
     getLegalMoves(state) {
       return state.legalMoves
