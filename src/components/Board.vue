@@ -6,34 +6,34 @@
     >
       <div class="rank" v-for="rank in configuration" :key="rank">
         <div
+          v-for="square in rank"
+          :key="square.squareID"
           class="square"
           :class="{
-            'drag-over': p.squareID === currentDragOverSquare,
+            'drag-enter': square === dragEnterSquare,
             'move-highlight':
-              moveHighlightSquares.includes(p.squareID) ||
-              p.squareID === tempMoveHighlightSquare,
-            'manual-highlight': manualHighlightSquares[p.squareID],
+              moveHighlights.includes(square.squareID) ||
+              square === startSquare,
+            'manual-highlight': manualHighlights[square.squareID],
           }"
-          v-for="p in rank"
-          :key="p.squareID"
-          @drop="onDrop(p.squareID)"
-          @dragenter.prevent
+          @click="handleClick($event, square)"
+          @dragstart="handleDragStart($event, square)"
+          @dragenter.prevent="handleDragEnter($event, square)"
           @dragover.prevent
-          @dragover="dragOver(p.squareID)"
-          @dragend="clearDragOutline"
-          @dragleave="clearDragOutline"
+          @dragend="handleDragEnd($event, square)"
+          @drop="handleDrop($event, square)"
           oncontextmenu="return false;"
-          @mousedown="setManualHighlight($event, p.squareID)"
-          @click="moveClick(p.squareID)"
+          @mousedown="handleMouseDown($event, square)"
+          @mouseup="handleMouseUp($event, square)"
         >
           <!-- Coord -->
           <div
-            v-if="showCoordinates && coords[p.squareID]"
+            v-if="showCoordinates && coords[square.squareID]"
             class="relative-container"
           >
             <div
               class="coord"
-              v-for="coord in coords[p.squareID]"
+              v-for="coord in coords[square.squareID]"
               :key="coord"
               :class="coord.class"
             >
@@ -43,22 +43,22 @@
 
           <!-- Hints -->
           <div
-            v-if="showLegal && hints.includes(p.squareID)"
+            v-if="showLegal && getHints.includes(square.squareID)"
             class="relative-container"
           >
             <div
-              :class="p.pieceName ? 'legal-circle-take' : 'legal-circle'"
+              :class="square.pieceName ? 'legal-circle-take' : 'legal-circle'"
             ></div>
           </div>
 
           <!-- Promotion -->
-          <div v-if="p.squareID === promotionSquare" class="relative-container">
+          <div v-if="square === promotionSquare" class="relative-container">
             <div class="promotion-options">
               <div
                 v-for="option in getPromotionOptions()"
                 :key="option"
                 class="option"
-                @click="setPromotionOption(option)"
+                @click="makePromotionMove(option)"
               >
                 <Piece :pieceName="option" :allowDrag="false" />
               </div>
@@ -66,12 +66,7 @@
           </div>
 
           <!-- Piece -->
-          <Piece
-            v-if="p.pieceName"
-            :pieceName="p.pieceName"
-            @dragstart="startDrag($event, p.squareID)"
-            @mousedown="revealHints($event, p.squareID)"
-          />
+          <Piece v-if="square.pieceName" :pieceName="square.pieceName" />
         </div>
       </div>
     </div>
@@ -111,13 +106,6 @@ export default {
     return {
       srcURL: "./assets/images/board/",
       boardModel: [],
-      currentDragOverSquare: null,
-      moveHighlightSquares: [],
-      tempMoveHighlightSquare: null,
-      manualHighlightSquares: {},
-      promotionMoves: [],
-      promotionSquare: null,
-      hints: [],
       coords: {
         a8: [{ letter: "8", class: "coord-rank coord-light" }],
         a7: [{ letter: "7", class: "coord-rank coord-dark" }],
@@ -140,6 +128,12 @@ export default {
       },
       promotionOptions: ["Q", "N", "R", "B"],
       currentBoardSize: null,
+      // New
+      dragEnterSquare: null,
+      startSquare: null,
+      promotionSquare: null,
+      moveHighlights: [],
+      manualHighlights: {},
     };
   },
   computed: {
@@ -173,9 +167,6 @@ export default {
           }
         }
       }
-      // console.log(this.boardModel);
-      // console.log(this.legalMoves);
-
       return this.boardModel;
     },
 
@@ -189,18 +180,138 @@ export default {
         } else {
           moves[from] = [to];
         }
-        if (move.promotion) {
-          if (this.promotionMoves[from]) {
-            this.promotionMoves[from].push(to);
-          } else {
-            this.promotionMoves[from] = [to];
-          }
-        }
       }
       return moves;
     },
+
+    getHints() {
+      if (this.startSquare) {
+        const hints = this.legalMoves[this.startSquare.squareID];
+        if (hints) return hints;
+        return [];
+      }
+      return [];
+    },
   },
   methods: {
+    ...mapMutations({
+      pushMove: "game/pushMove",
+    }),
+    handleClick(event, square) {
+      // Overall
+      //  Highlight
+      //  Reveal hints
+      //  Clear manual highlights (& later arrow?)
+      const mouse = event.which;
+
+      if (this.promotionSquare) {
+        // Cancel promotion move
+        this.promotionSquare = null;
+      }
+
+      // Click piece:
+      //    clicked piece before: make legal move || change temp highlight
+      //    not clicked piece before => temp highlight + hints
+      // Click empty square: no special tasks
+      // Finally: clear manual highlights (& later arrow?)
+      if (mouse === 1) {
+        if (this.startSquare && this.validateMove(this.startSquare, square)) {
+          // promotion is handle somewhere else
+          this.makeMove(this.startSquare.squareID, square.squareID);
+        } else if (square.pieceName && !this.promotionSquare) {
+          this.startSquare = square;
+        }
+      }
+      // Arrows later?
+      this.clearManualHighlights();
+      this.clearDragOutline();
+    },
+    handleDragStart(event, square) {
+      const mouse = event.which;
+      switch (mouse) {
+        case 1:
+          // See startDrag
+          // Finally: clear manual highlights (& later arrow?)
+          event.dataTransfer.dropEffect = "move";
+          event.dataTransfer.effectAllowed = "move";
+          event.dataTransfer.setData("itemID", square.squareID);
+          this.startSquare = square;
+          this.clearManualHighlights();
+          break;
+        case 3:
+          // Draw arrow?
+          break;
+        default:
+          // Clear manual highlights (& later arrow?)
+          this.clearManualHighlights();
+          break;
+      }
+    },
+    handleDragEnter(event, square) {
+      const mouse = event.which;
+      if (mouse === 1) {
+        // Assign drag outline to square
+        // May need to handle dragleave? See if drag end is good enought
+        this.dragEnterSquare = square;
+      }
+    },
+    handleDragEnd(event, square) {
+      // Dragleave?
+      // Just clear drag outline?
+      this.clearDragOutline();
+    },
+    handleDrop(event, square) {
+      // Make use of handleClick?
+      // No clear drag outline?
+      const mouse = event.which;
+      if (mouse === 1) {
+        // Necessary?
+        // This means there was a focused square at drag start (from)
+        // This square is (to)
+        this.handleClick(event, square);
+      }
+    },
+
+    // Manual highlights
+    handleMouseDown(event, square) {
+      const mouse = event.which;
+      if (mouse === 3) {
+      }
+    },
+    handleMouseUp(event, square) {
+      const mouse = event.which;
+      if (mouse === 3) {
+        this.setManualHighlight(square.squareID);
+      }
+    },
+
+    validateMove(from, to) {
+      const moves = this.getLegalMoves;
+      const move = moves.find(
+        (element) =>
+          element.from === from.squareID && element.to === to.squareID
+      );
+      if (move) {
+        if (!move.promotion) return true;
+        this.promotionSquare = to;
+      }
+      return false;
+    },
+
+    makeMove(from, to, promotion = null) {
+      const move = { from: from, to: to };
+      if (promotion) {
+        move["promotion"] = promotion;
+      }
+      this.pushMove(move);
+      this.clearMoveHighlights();
+      this.setMoveHighlight(from);
+      this.setMoveHighlight(to);
+      this.clearManualHighlights();
+      this.promotionSquare = null;
+      this.startSquare = null;
+    },
+
     onResize() {
       this.resizeBoard(window.innerWidth, window.innerHeight);
     },
@@ -219,9 +330,7 @@ export default {
       const boardContainer = document.getElementById("board-container");
       boardContainer.style.setProperty("--board-size", `${boardSize}px`);
     },
-    ...mapMutations({
-      pushMove: "game/pushMove",
-    }),
+
     createBoardModel() {
       const files = "abcdefgh";
       const ranks = "87654321";
@@ -241,121 +350,32 @@ export default {
       const options = this.promotionOptions.map((option) => turn + option);
       return options;
     },
-    setPromotionOption(option) {
+    makePromotionMove(option) {
       const op = option.toLowerCase()[1];
-      this.commitMove(this.tempMoveHighlightSquare, this.promotionSquare, op);
-    },
-
-    legalHints(id) {
-      const hints = this.legalMoves;
-      if (hints[id]) {
-        return hints[id];
-      }
-      return [];
-    },
-    revealHints(event, id) {
-      if (event.which === 1) {
-        this.hints = this.legalHints(id);
-      }
-    },
-    clearHints() {
-      this.hints = [];
-    },
-    startDrag(event, item) {
-      event.dataTransfer.dropEffect = "move";
-      event.dataTransfer.effectAllowed = "move";
-      event.dataTransfer.setData("itemID", item);
-      this.setTempMoveHighlight(item);
-    },
-    dragOver(id) {
-      if (id != this.currentDragOverSquare) {
-        this.currentDragOverSquare = id;
-      }
+      this.makeMove(
+        this.startSquare.squareID,
+        this.promotionSquare.squareID,
+        op
+      );
     },
     clearDragOutline() {
-      this.currentDragOverSquare = null;
-    },
-    onDrop(id) {
-      this.moveClick(id);
-      this.clearDragOutline();
-    },
-    moveClick(id) {
-      if (this.tempMoveHighlightSquare && id !== this.tempMoveHighlightSquare) {
-        this.commitMove(this.tempMoveHighlightSquare, id);
-        return;
-      }
-      // TEMP
-      const rank = this.configuration.find((rank) =>
-        rank.find((square) => square.squareID === id)
-      );
-      const square = rank.find((square) => square.squareID === id);
-      if (square.pieceName) {
-        this.setTempMoveHighlight(id);
-      }
-    },
-    commitMove(id1, id2, promotion = null) {
-      if (this.promotionMoves[id1] && this.promotionMoves[id1].includes(id2)) {
-        if (!promotion) {
-          this.promotionSquare = id2;
-          return;
-        }
-        this.pushMove({
-          from: id1,
-          to: id2,
-          promotion: promotion,
-        });
-        this.clearMoveHighlights();
-        this.setMoveHighlight(id1);
-        this.setMoveHighlight(id2);
-        this.clearHints();
-        this.promotionMoves = [];
-        this.promotionSquare = null;
-      }
-      if (this.legalMoves[id1] && this.legalMoves[id1].includes(id2)) {
-        this.pushMove({
-          from: id1,
-          to: id2,
-        });
-        this.clearMoveHighlights();
-        this.setMoveHighlight(id1);
-        this.setMoveHighlight(id2);
-        this.clearHints();
-      } else {
-        // TEMP
-        const rank = this.configuration.find((rank) =>
-          rank.find((square) => square.squareID === id2)
-        );
-        const square = rank.find((square) => square.squareID === id2);
-        if (square.pieceName) {
-          this.setTempMoveHighlight(id2);
-        }
-      }
-    },
-    setTempMoveHighlight(id) {
-      this.tempMoveHighlightSquare = id;
-    },
-    clearTempMoveHighlight() {
-      this.tempMoveHighlightSquare = null;
+      this.dragEnterSquare = null;
     },
     setMoveHighlight(id) {
-      this.moveHighlightSquares.push(id);
+      this.moveHighlights.push(id);
     },
     clearMoveHighlights() {
-      this.moveHighlightSquares = [];
+      this.moveHighlights = [];
     },
-    setManualHighlight(event, id) {
-      if (event.which === 3) {
-        if (this.manualHighlightSquares[id]) {
-          delete this.manualHighlightSquares[id];
-        } else {
-          this.manualHighlightSquares[id] = true;
-        }
+    setManualHighlight(id) {
+      if (this.manualHighlights[id]) {
+        delete this.manualHighlights[id];
       } else {
-        this.clearManualHighlights();
+        this.manualHighlights[id] = true;
       }
     },
     clearManualHighlights() {
-      this.manualHighlightSquares = {};
+      this.manualHighlights = {};
     },
   },
 };
@@ -484,7 +504,7 @@ export default {
           }
         }
       }
-      .drag-over {
+      .drag-enter {
         outline-offset: calc(-1 * var(--drag-outline-size));
         outline: var(--drag-outline-size) solid var(--drag-outline-color);
       }
