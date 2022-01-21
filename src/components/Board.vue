@@ -1,10 +1,18 @@
 <template>
   <div class="board-container" id="board-container">
+    <!-- Board -->
     <div
+      id="board"
       class="board unselectable"
+      :class="{ 'flipped-col': flipBoard }"
       :style="{ backgroundImage: 'url(' + boardImage + ')' }"
     >
-      <div class="rank" v-for="rank in configuration" :key="rank">
+      <div
+        :class="{ 'flipped-row': flipBoard }"
+        class="rank"
+        v-for="rank in configuration"
+        :key="rank"
+      >
         <div
           v-for="square in rank"
           :key="square.squareID"
@@ -13,15 +21,15 @@
             'drag-enter': square === dragEnterSquare,
             'move-highlight':
               moveHighlights.includes(square.squareID) ||
-              square === startSquare,
+              (!isInReview && square === startSquare),
             'manual-highlight': manualHighlights[square.squareID],
           }"
           @click="handleClick($event, square)"
           @dragstart="handleDragStart($event, square)"
           @dragenter.prevent="handleDragEnter($event, square)"
           @dragover.prevent
-          @dragend="handleDragEnd($event, square)"
-          @drop="handleDrop($event, square)"
+          @dragend.prevent="handleDragEnd($event, square)"
+          @drop.prevent="handleDrop($event, square)"
           oncontextmenu="return false;"
           @mousedown="handleMouseDown($event, square)"
           @mouseup="handleMouseUp($event, square)"
@@ -53,7 +61,14 @@
 
           <!-- Promotion -->
           <div v-if="square === promotionSquare" class="relative-container">
-            <div class="promotion-options">
+            <div
+              class="promotion-options"
+              :class="{
+                'promotion-options-flipped':
+                  (getTurn === 'b' && !flipBoard) ||
+                  (getTurn === 'w' && flipBoard),
+              }"
+            >
               <div
                 v-for="option in getPromotionOptions()"
                 :key="option"
@@ -106,7 +121,32 @@ export default {
     return {
       srcURL: "./assets/images/board/",
       boardModel: [],
-      coords: {
+      promotionOptions: ["Q", "N", "R", "B"],
+      currentBoardSize: null,
+      // New
+      dragEnterSquare: null,
+      startSquare: null,
+      promotionSquare: null,
+      manualHighlights: {},
+      arrows: [],
+    };
+  },
+  computed: {
+    ...mapGetters({
+      boardTheme: "settings/getBoardTheme",
+      showLegal: "settings/showLegalMoves",
+      showCoordinates: "settings/showCoordinates",
+      flipBoard: "settings/getFlipBoard",
+
+      getBoard: "game/getBoard",
+      getLegalMoves: "game/getLegalMoves",
+      getTurn: "game/getTurn",
+      getLastMove: "game/getLastMove",
+      isInReview: "game/isInReview",
+    }),
+
+    coords() {
+      const coords = {
         a8: [{ letter: "8", class: "coord-rank coord-light" }],
         a7: [{ letter: "7", class: "coord-rank coord-dark" }],
         a6: [{ letter: "6", class: "coord-rank coord-light" }],
@@ -125,27 +165,29 @@ export default {
         f1: [{ letter: "f", class: "coord-file coord-light" }],
         g1: [{ letter: "g", class: "coord-file coord-dark" }],
         h1: [{ letter: "h", class: "coord-file coord-light" }],
-      },
-      promotionOptions: ["Q", "N", "R", "B"],
-      currentBoardSize: null,
-      // New
-      dragEnterSquare: null,
-      startSquare: null,
-      promotionSquare: null,
-      moveHighlights: [],
-      manualHighlights: {},
-    };
-  },
-  computed: {
-    ...mapGetters({
-      boardTheme: "settings/getBoardTheme",
-      showLegal: "settings/showLegalMoves",
-      showCoordinates: "settings/showCoordinates",
-
-      getBoard: "game/getBoard",
-      getLegalMoves: "game/getLegalMoves",
-      getTurn: "game/getTurn",
-    }),
+      };
+      const coordsFlipped = {
+        a8: [{ letter: "a", class: "coord-file coord-light" }],
+        b8: [{ letter: "b", class: "coord-file coord-dark" }],
+        c8: [{ letter: "c", class: "coord-file coord-light" }],
+        d8: [{ letter: "d", class: "coord-file coord-dark" }],
+        e8: [{ letter: "e", class: "coord-file coord-light" }],
+        f8: [{ letter: "f", class: "coord-file coord-dark" }],
+        g8: [{ letter: "g", class: "coord-file coord-light" }],
+        h8: [
+          { letter: "8", class: "coord-rank coord-dark" },
+          { letter: "h", class: "coord-file coord-dark" },
+        ],
+        h7: [{ letter: "7", class: "coord-rank coord-light" }],
+        h6: [{ letter: "6", class: "coord-rank coord-dark" }],
+        h5: [{ letter: "5", class: "coord-rank coord-light" }],
+        h4: [{ letter: "4", class: "coord-rank coord-dark" }],
+        h3: [{ letter: "3", class: "coord-rank coord-light" }],
+        h2: [{ letter: "2", class: "coord-rank coord-dark" }],
+        h1: [{ letter: "1", class: "coord-rank coord-light" }],
+      };
+      return this.flipBoard ? coordsFlipped : coords;
+    },
 
     boardImage() {
       const extension = this.boardTheme.substr(this.boardTheme.length - 4);
@@ -168,6 +210,16 @@ export default {
         }
       }
       return this.boardModel;
+    },
+
+    moveHighlights() {
+      const move = this.getLastMove;
+      const highlights = [];
+      if (move) {
+        highlights.push(move.from);
+        highlights.push(move.to);
+      }
+      return highlights;
     },
 
     legalMoves() {
@@ -219,7 +271,11 @@ export default {
           // promotion is handle somewhere else
           this.makeMove(this.startSquare.squareID, square.squareID);
         } else if (square.pieceName && !this.promotionSquare) {
-          this.startSquare = square;
+          if (this.startSquare !== square) {
+            this.startSquare = square;
+          } else {
+            this.startSquare = null;
+          }
         }
       }
       // Arrows later?
@@ -276,12 +332,19 @@ export default {
     handleMouseDown(event, square) {
       const mouse = event.which;
       if (mouse === 3) {
+        this.arrows.push({
+          from: {
+            x: event.x,
+            y: event.y,
+          },
+        });
       }
     },
     handleMouseUp(event, square) {
       const mouse = event.which;
       if (mouse === 3) {
         this.setManualHighlight(square.squareID);
+        this.arrows[this.arrows.length - 1]["to"] = { x: event.x, y: event.y };
       }
     },
 
@@ -304,9 +367,6 @@ export default {
         move["promotion"] = promotion;
       }
       this.pushMove(move);
-      this.clearMoveHighlights();
-      this.setMoveHighlight(from);
-      this.setMoveHighlight(to);
       this.clearManualHighlights();
       this.promotionSquare = null;
       this.startSquare = null;
@@ -317,7 +377,7 @@ export default {
     },
     resizeBoard(width, height) {
       const minBoardSize = 400;
-      var boardSize = Math.floor(0.8 * Math.min(width, height));
+      var boardSize = Math.floor(0.91 * Math.min(width, height));
       boardSize -= boardSize % 8;
       if (
         boardSize <= minBoardSize ||
@@ -348,6 +408,12 @@ export default {
     getPromotionOptions() {
       const turn = this.getTurn;
       const options = this.promotionOptions.map((option) => turn + option);
+      if (
+        (this.getTurn === "b" && !this.flipBoard) ||
+        (this.getTurn === "w" && this.flipBoard)
+      ) {
+        options.reverse();
+      }
       return options;
     },
     makePromotionMove(option) {
@@ -360,12 +426,6 @@ export default {
     },
     clearDragOutline() {
       this.dragEnterSquare = null;
-    },
-    setMoveHighlight(id) {
-      this.moveHighlights.push(id);
-    },
-    clearMoveHighlights() {
-      this.moveHighlights = [];
     },
     setManualHighlight(id) {
       if (this.manualHighlights[id]) {
@@ -383,12 +443,12 @@ export default {
 
 <style lang="scss" scoped>
 .board-container {
-  --drag-outline-color: #d1e8e4;
-  --move-highlight-color: #d8e04a;
-  --manual-highlight-color: #d4715f;
+  --drag-outline-color: rgba(0, 0, 0, 0.15);
+  --move-highlight-color: rgba(255, 255, 0, 0.55);
+  --manual-highlight-color: rgba(235, 97, 80, 0.8);
   --coord-light-color: #779952;
   --coord-dark-color: #edeed1;
-  --legal-circle-color: #abab95;
+  --legal-circle-color: rgba(0, 0, 0, 0.2);
 
   --board-size-min: 400px;
   --board-size: min(80vh, 80vw);
@@ -422,6 +482,13 @@ export default {
   height: 0;
   padding-bottom: 100%;
   width: 100%;
+
+  .flipped-col {
+    flex-direction: column-reverse !important;
+  }
+  .flipped-row {
+    flex-direction: row-reverse !important;
+  }
   .board {
     margin: auto;
     touch-action: none;
@@ -448,8 +515,7 @@ export default {
           .coord {
             z-index: 0;
             position: absolute;
-            font-weight: 600;
-            font-family: Arial, Helvetica, sans-serif;
+            font-weight: 500;
             font-size: var(--coord-size);
           }
           .coord-rank {
@@ -487,6 +553,9 @@ export default {
             border-color: var(--legal-circle-color);
             border-width: var(--legal-circle-take-border);
           }
+          .promotion-options-flipped {
+            top: calc(-3 * var(--board-size) / 8);
+          }
           .promotion-options {
             position: absolute;
             background: white;
@@ -505,16 +574,25 @@ export default {
         }
       }
       .drag-enter {
-        outline-offset: calc(-1 * var(--drag-outline-size));
-        outline: var(--drag-outline-size) solid var(--drag-outline-color);
+        // outline-offset: calc(-1 * var(--drag-outline-size));
+        // outline: var(--drag-outline-size) solid var(--drag-outline-color);
+        background-color: var(--drag-outline-color) !important;
       }
       .move-highlight {
         background-color: var(--move-highlight-color);
-        opacity: 0.9;
+        opacity: 0.95;
       }
       .manual-highlight {
-        background-color: var(--manual-highlight-color);
-        opacity: 0.9;
+        background-color: var(--manual-highlight-color) !important;
+      }
+    }
+    .arrow-container {
+      position: relative;
+      .arrow {
+        position: absolute;
+        width: 100px;
+        height: 20px;
+        background-color: black;
       }
     }
   }

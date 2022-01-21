@@ -8,6 +8,7 @@ export const settings = {
       showLegal: true,
       showCoords: true,
       soundOn: true,
+      flipBoard: false,
     }
   },
 
@@ -26,6 +27,9 @@ export const settings = {
     },
     setSoundOn(state, on) {
       state.soundOn = on
+    },
+    setFlipBoard(state) {
+      state.flipBoard = !state.flipBoard
     }
   },
 
@@ -44,6 +48,9 @@ export const settings = {
     },
     getSoundOn(state) {
       return state.soundOn
+    },
+    getFlipBoard(state) {
+      return state.flipBoard
     }
   }
 }

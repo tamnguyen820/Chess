@@ -53,15 +53,13 @@ export default {
   width: 100%;
   height: 100%;
   opacity: 1;
-  z-index: 4;
 }
 .draggable {
-  cursor: grab;
-  cursor: -moz-grab;
-  cursor: -webkit-grab;
+  cursor: pointer;
+  cursor: -moz-pointer;
+  cursor: -webkit-pointer;
 }
 .dragging {
-  opacity: 0;
-  z-index: 5;
+  opacity: 1;
 }
 </style>
