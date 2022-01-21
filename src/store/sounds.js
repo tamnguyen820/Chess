@@ -12,5 +12,6 @@ for (const name in audioMapping) {
 }
 
 export default function playSound(name) {
-  audios[name].play()
+  const audio = audios[name]
+  audio.play()
 }

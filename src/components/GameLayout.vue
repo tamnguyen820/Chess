@@ -1,16 +1,8 @@
 <template>
   <div class="wrapper">
     <div class="main-area">
-      <div class="player player-above">
-        above
-        <slot name="player-above" />
-      </div>
       <div class="board">
         <slot name="board" />
-      </div>
-      <div class="player player-below">
-        below
-        <slot name="player-below" />
       </div>
     </div>
     <div class="side-bar">
@@ -30,23 +22,18 @@ export default {};
   justify-content: center;
   height: 100%;
   width: 100%;
+  margin-top: 10px;
   .main-area {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-around;
-    // width: 68%;
+    margin-top: auto;
+    margin-bottom: auto;
     margin-right: max(2%, 10px);
-    .player {
-      height: 5%;
-      background-color: blue;
-    }
   }
   .side-bar {
     height: 100%;
     // min-width: 25vw;
     // max-width: 30vw;
-    min-width: 200px;
-    min-height: 400px;
+    min-width: 340px;
+    min-height: 500px;
     width: 30%;
   }
 }
