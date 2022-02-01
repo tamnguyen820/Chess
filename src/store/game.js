@@ -172,6 +172,12 @@ export const game = {
     isGameOver(state) {
       return state.gameOver
     },
+    isDraw(state) {
+      if (state.gameOver) {
+        return state.chessGame.in_draw()
+      }
+      return false
+    },
     isInReview(state) {
       return state.reviewStack.length
     },

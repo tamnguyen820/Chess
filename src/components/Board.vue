@@ -85,6 +85,38 @@
         </div>
       </div>
     </div>
+
+    <!-- Arrows -->
+    <div
+      class="absolute-container arrow-container"
+      :class="{ 'flipped-arrow-container': flipBoard }"
+      v-for="arrow in arrows"
+      :key="arrow.from + arrow.to"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800">
+        <defs>
+          <marker
+            :id="'arrowhead-' + arrow.from + arrow.to"
+            markerWidth="10"
+            markerHeight="3"
+            refX="2"
+            refY="1.5"
+            orient="auto"
+          >
+            <polygon points="0 0, 3 1.5, 0 3" fill="#FFAA00" />
+          </marker>
+        </defs>
+        <line
+          :x1="arrow.x1"
+          :y1="arrow.y1"
+          :x2="arrow.x2"
+          :y2="arrow.y2"
+          stroke="#FFAA00"
+          stroke-width="2.5%"
+          :marker-end="`url(#arrowhead-${arrow.from + arrow.to})`"
+        />
+      </svg>
+    </div>
   </div>
 </template>
 
@@ -109,7 +141,7 @@ export default {
     this.$nextTick(() => {
       window.addEventListener("resize", this.onResize);
     });
-    this.resizeBoard(window.innerWidth, window.innerHeight);
+    this.resizeBoard(window.outerWidth, window.outerHeight);
   },
   beforeUnmount() {
     window.removeEventListener("resize", this.onResize);
@@ -129,6 +161,7 @@ export default {
       promotionSquare: null,
       manualHighlights: {},
       arrows: [],
+      arrowFrom: "",
     };
   },
   computed: {
@@ -247,6 +280,8 @@ export default {
   },
   methods: {
     ...mapMutations({
+      setBoardSize: "settings/setBoardSize",
+
       pushMove: "game/pushMove",
     }),
     handleClick(event, square) {
@@ -280,6 +315,7 @@ export default {
       }
       // Arrows later?
       this.clearManualHighlights();
+      this.clearArrows();
       this.clearDragOutline();
     },
     handleDragStart(event, square) {
@@ -293,6 +329,7 @@ export default {
           event.dataTransfer.setData("itemID", square.squareID);
           this.startSquare = square;
           this.clearManualHighlights();
+          this.clearArrows();
           break;
         case 3:
           // Draw arrow?
@@ -300,6 +337,7 @@ export default {
         default:
           // Clear manual highlights (& later arrow?)
           this.clearManualHighlights();
+          this.clearArrows();
           break;
       }
     },
@@ -332,20 +370,33 @@ export default {
     handleMouseDown(event, square) {
       const mouse = event.which;
       if (mouse === 3) {
-        this.arrows.push({
-          from: {
-            x: event.x,
-            y: event.y,
-          },
-        });
+        this.arrowFrom = square.squareID;
       }
     },
     handleMouseUp(event, square) {
       const mouse = event.which;
       if (mouse === 3) {
-        this.setManualHighlight(square.squareID);
-        this.arrows[this.arrows.length - 1]["to"] = { x: event.x, y: event.y };
+        if (this.arrowFrom !== square.squareID) {
+          this.addNewArrow(this.arrowFrom, square.squareID);
+        } else {
+          this.setManualHighlight(square.squareID);
+        }
       }
+      this.arrowFrom = "";
+    },
+    addNewArrow(from, to) {
+      const x1 = Math.abs(from[0].charCodeAt() - "a".charCodeAt()) * 100 + 50;
+      const y1 = Math.abs(from[1].charCodeAt() - "8".charCodeAt()) * 100 + 50;
+      const x2 = Math.abs(to[0].charCodeAt() - "a".charCodeAt()) * 100 + 50;
+      const y2 = Math.abs(to[1].charCodeAt() - "8".charCodeAt()) * 100 + 50;
+      this.arrows.push({
+        from,
+        to,
+        x1,
+        y1,
+        x2,
+        y2,
+      });
     },
 
     validateMove(from, to) {
@@ -368,16 +419,17 @@ export default {
       }
       this.pushMove(move);
       this.clearManualHighlights();
+      this.clearArrows();
       this.promotionSquare = null;
       this.startSquare = null;
     },
 
     onResize() {
-      this.resizeBoard(window.innerWidth, window.innerHeight);
+      this.resizeBoard(window.outerWidth, window.outerHeight);
     },
     resizeBoard(width, height) {
       const minBoardSize = 400;
-      var boardSize = Math.floor(0.91 * Math.min(width, height));
+      var boardSize = Math.floor(0.8 * Math.min(width, height));
       boardSize -= boardSize % 8;
       if (
         boardSize <= minBoardSize ||
@@ -389,6 +441,8 @@ export default {
       // Change styles
       const boardContainer = document.getElementById("board-container");
       boardContainer.style.setProperty("--board-size", `${boardSize}px`);
+
+      this.setBoardSize(boardSize);
     },
 
     createBoardModel() {
@@ -437,6 +491,10 @@ export default {
     clearManualHighlights() {
       this.manualHighlights = {};
     },
+    clearArrows() {
+      this.arrows = [];
+      this.arrowFrom = "";
+    },
   },
 };
 </script>
@@ -453,8 +511,8 @@ export default {
   --board-size-min: 400px;
   --board-size: min(80vh, 80vw);
   --coord-size: max(
-    calc(var(--board-size) / 40),
-    calc(var(--board-size-min) / 40)
+    calc(var(--board-size) / 45),
+    calc(var(--board-size-min) / 45)
   );
   --drag-outline-size: max(
     calc(var(--board-size) / 120),
@@ -465,8 +523,8 @@ export default {
     calc(var(--board-size-min) / 25)
   );
   --legal-circle-take-size: max(
-    calc(var(--board-size) / 10),
-    calc(var(--board-size-min) / 10)
+    calc(var(--board-size) / 8),
+    calc(var(--board-size-min) / 8)
   );
   --legal-circle-take-border: max(
     calc(var(--board-size) / 80),
@@ -482,6 +540,7 @@ export default {
   height: 0;
   padding-bottom: 100%;
   width: 100%;
+  position: relative;
 
   .flipped-col {
     flex-direction: column-reverse !important;
@@ -489,7 +548,9 @@ export default {
   .flipped-row {
     flex-direction: row-reverse !important;
   }
+
   .board {
+    z-index: 1;
     margin: auto;
     touch-action: none;
     border-radius: 5px;
@@ -510,65 +571,62 @@ export default {
       .square {
         flex: 0 0 12.5%;
         height: 100%;
-        .relative-container {
-          position: relative;
-          .coord {
-            z-index: 0;
-            position: absolute;
-            font-weight: 500;
-            font-size: var(--coord-size);
-          }
-          .coord-rank {
-            margin-top: 5%;
-            margin-left: 5%;
-          }
-          .coord-file {
-            margin-top: 72%;
-            margin-left: 82%;
-          }
-          .coord-light {
-            color: var(--coord-light-color);
-          }
-          .coord-dark {
-            color: var(--coord-dark-color);
-          }
-          .legal-circle {
-            position: absolute;
-            background: var(--legal-circle-color);
-            opacity: 0.7;
-            width: var(--legal-circle-size);
-            height: var(--legal-circle-size);
-            border-radius: 50%;
-            margin-top: 34%;
-            margin-left: 34%;
-          }
-          .legal-circle-take {
-            position: absolute;
-            background: transparent;
-            opacity: 0.7;
-            width: var(--legal-circle-take-size);
-            height: var(--legal-circle-take-size);
-            border-radius: 50%;
-            border-style: solid;
-            border-color: var(--legal-circle-color);
-            border-width: var(--legal-circle-take-border);
-          }
-          .promotion-options-flipped {
-            top: calc(-3 * var(--board-size) / 8);
-          }
-          .promotion-options {
-            position: absolute;
-            background: white;
-            z-index: 100;
+        .coord {
+          z-index: 0;
+          position: absolute;
+          font-weight: 500;
+          font-size: var(--coord-size);
+        }
+        .coord-rank {
+          margin-top: 5%;
+          margin-left: 5%;
+        }
+        .coord-file {
+          margin-top: 72%;
+          margin-left: 82%;
+        }
+        .coord-light {
+          color: var(--coord-light-color);
+        }
+        .coord-dark {
+          color: var(--coord-dark-color);
+        }
+        .legal-circle {
+          position: absolute;
+          background: var(--legal-circle-color);
+          opacity: 0.7;
+          width: var(--legal-circle-size);
+          height: var(--legal-circle-size);
+          border-radius: 50%;
+          margin-top: 34%;
+          margin-left: 34%;
+        }
+        .legal-circle-take {
+          position: absolute;
+          background: transparent;
+          opacity: 0.7;
+          width: var(--legal-circle-take-size);
+          height: var(--legal-circle-take-size);
+          border-radius: 50%;
+          border-style: solid;
+          border-color: var(--legal-circle-color);
+          border-width: var(--legal-circle-take-border);
+        }
+        .promotion-options-flipped {
+          top: calc(-3 * var(--board-size) / 8);
+        }
+        .promotion-options {
+          position: absolute;
+          background: white;
+          z-index: 100;
+          width: calc(var(--board-size) / 8);
+          height: calc(var(--board-size) / 2);
+          box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
+          .option {
             width: calc(var(--board-size) / 8);
-            height: calc(var(--board-size) / 2);
-            box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
-            .option {
-              width: calc(var(--board-size) / 8);
-              height: calc(var(--board-size) / 8);
-              &:hover {
-                background: lightblue;
-              }
+            height: calc(var(--board-size) / 8);
+            &:hover {
+              background: lightblue;
             }
           }
         }
@@ -586,15 +644,17 @@ export default {
         background-color: var(--manual-highlight-color) !important;
       }
     }
-    .arrow-container {
-      position: relative;
-      .arrow {
-        position: absolute;
-        width: 100px;
-        height: 20px;
-        background-color: black;
-      }
-    }
+  }
+
+  .arrow-container {
+    width: var(--board-size);
+    height: var(--board-size);
+    z-index: 1;
+    pointer-events: none;
+    opacity: 0.7;
+  }
+  .flipped-arrow-container {
+    transform: rotate(180deg);
   }
 }
 .unselectable {
@@ -603,5 +663,11 @@ export default {
   -moz-user-select: none;
   -webkit-user-select: none;
   -ms-user-select: none;
+}
+.relative-container {
+  position: relative;
+}
+.absolute-container {
+  position: absolute;
 }
 </style>

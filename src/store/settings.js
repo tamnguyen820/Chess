@@ -4,6 +4,7 @@ export const settings = {
   state() {
     return {
       boardTheme: "neogreen.svg",
+      boardSize: 800,
       pieceTheme: "neo",
       showLegal: true,
       showCoords: true,
@@ -15,6 +16,9 @@ export const settings = {
   mutations: {
     setBoardTheme(state, theme) {
       state.boardTheme = theme
+    },
+    setBoardSize(state, size) {
+      state.boardSize = size
     },
     setPieceTheme(state, theme) {
       state.pieceTheme = theme
@@ -36,6 +40,9 @@ export const settings = {
   getters: {
     getBoardTheme(state) {
       return state.boardTheme
+    },
+    getBoardSize(state) {
+      return state.boardSize
     },
     getPieceTheme(state) {
       return state.pieceTheme

@@ -1,6 +1,9 @@
 <template>
   <div class="game-layout">
     <GameLayout>
+      <template v-slot:eval-bar>
+        <EvaluationBar />
+      </template>
       <template v-slot:board>
         <Board />
       </template>
@@ -9,21 +12,21 @@
       </template>
     </GameLayout>
   </div>
-  <!-- <Board /> -->
 </template>
 
 <script>
-import { chess } from "../store/chessgame.js";
+import EvaluationBar from "./EvaluationBar.vue";
+import Board from "./Board.vue";
 import GameLayout from "./GameLayout.vue";
 import GameSidebar from "./GameSidebar.vue";
 
 import { mapGetters, mapMutations } from "vuex";
-import Board from "./Board.vue";
 export default {
   components: {
     Board,
     GameLayout,
     GameSidebar,
+    EvaluationBar,
   },
   created() {
     // chess();
@@ -42,8 +45,12 @@ export default {
 
 <style lang="scss" scoped>
 .game-layout {
-  height: 97vh;
+  height: 100vh;
   width: 80vw;
   margin: auto;
+  @media (max-width: 767.98px) {
+    height: unset;
+    width: 90vw;
+  }
 }
 </style>

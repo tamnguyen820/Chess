@@ -200,7 +200,7 @@ export default {
 <style  lang="scss" scoped>
 $background-color: #f0f0f0;
 
-$avatar-size: max(2.8rem, 30px);
+$avatar-size: max(3rem, 30px);
 
 $captured-piece-size: min(1.5rem, 20px);
 
@@ -268,7 +268,7 @@ $button-hover-color: lightblue;
           display: flex;
           flex-wrap: wrap;
           flex-direction: column;
-          justify-content: center;
+          // justify-content: space-between;
           margin-left: 7.5px;
           overflow: auto;
           width: 100%;
@@ -375,13 +375,15 @@ $button-hover-color: lightblue;
   .button-area {
     padding-top: 10px;
     padding-bottom: 10px;
-    height: 10%;
+    height: 14%;
     display: flex;
     justify-content: space-evenly;
     align-items: center;
     .move-button {
       display: inline-flex;
       overflow: hidden;
+      min-height: 30px;
+      max-height: 100px;
       height: 65%;
       width: 30%;
       border-radius: 5px;
