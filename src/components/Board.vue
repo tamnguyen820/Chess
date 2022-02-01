@@ -90,31 +90,31 @@
     <div
       class="absolute-container arrow-container"
       :class="{ 'flipped-arrow-container': flipBoard }"
-      v-for="arrow in arrows"
-      :key="arrow.from + arrow.to"
     >
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800">
-        <defs>
-          <marker
-            :id="'arrowhead-' + arrow.from + arrow.to"
-            markerWidth="10"
-            markerHeight="3"
-            refX="2"
-            refY="1.5"
-            orient="auto"
-          >
-            <polygon points="0 0, 3 1.5, 0 3" fill="#FFAA00" />
-          </marker>
-        </defs>
-        <line
-          :x1="arrow.x1"
-          :y1="arrow.y1"
-          :x2="arrow.x2"
-          :y2="arrow.y2"
-          stroke="#FFAA00"
-          stroke-width="2.5%"
-          :marker-end="`url(#arrowhead-${arrow.from + arrow.to})`"
-        />
+        <g v-for="arrow in arrows" :key="arrow.from + arrow.to">
+          <defs>
+            <marker
+              :id="'arrowhead-' + arrow.from + arrow.to"
+              markerWidth="10"
+              markerHeight="3"
+              refX="2"
+              refY="1.5"
+              orient="auto"
+            >
+              <polygon points="0 0, 3 1.5, 0 3" fill="#FFAA00" />
+            </marker>
+          </defs>
+          <line
+            :x1="arrow.x1"
+            :y1="arrow.y1"
+            :x2="arrow.x2"
+            :y2="arrow.y2"
+            stroke="#FFAA00"
+            stroke-width="2.5%"
+            :marker-end="`url(#arrowhead-${arrow.from + arrow.to})`"
+          />
+        </g>
       </svg>
     </div>
   </div>
@@ -305,15 +305,14 @@ export default {
         if (this.startSquare && this.validateMove(this.startSquare, square)) {
           // promotion is handle somewhere else
           this.makeMove(this.startSquare.squareID, square.squareID);
-        } else if (square.pieceName && !this.promotionSquare) {
-          if (this.startSquare !== square) {
+        } else if (!this.promotionSquare) {
+          if (square.pieceName && this.startSquare !== square) {
             this.startSquare = square;
           } else {
             this.startSquare = null;
           }
         }
       }
-      // Arrows later?
       this.clearManualHighlights();
       this.clearArrows();
       this.clearDragOutline();

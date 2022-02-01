@@ -40,7 +40,6 @@ export default {
     }),
     evaluation() {
       if (this.draw) {
-        this.setEvaluationTextPos(0);
         this.updateEvaluationBar(this.turn, "cp", 0);
         return "0.0";
       }
@@ -51,7 +50,6 @@ export default {
       if (this.turn === "b") {
         score *= -1;
       }
-      this.setEvaluationTextPos(score);
       this.updateEvaluationBar(this.turn, type, score);
       score = Math.abs(score);
       if (type === "mate") {
@@ -96,22 +94,6 @@ export default {
       bar.style.setProperty("--bar-height", `${height}px`);
       bar.style.setProperty("--bar-width", `${Math.round(height * 0.05)}px`);
     },
-    setEvaluationTextPos(score) {
-      this.$nextTick(() => {
-        const text = document.getElementById("evaluation-text");
-        if (score >= 0) {
-          // White is better or even
-          text.style.setProperty("--text-color", "#403d39");
-          text.style.setProperty("--text-top", "unset");
-          text.style.setProperty("--text-bottom", "2%");
-        } else {
-          // Black is better
-          text.style.setProperty("--text-color", "white");
-          text.style.setProperty("--text-top", "2%");
-          text.style.setProperty("--text-bottom", "unset");
-        }
-      });
-    },
     updateEvaluationBar(turn, type, score) {
       this.$nextTick(() => {
         const fill = document.getElementById("evaluation-fill");
@@ -145,6 +127,26 @@ export default {
         // Regular situations
         var fillHeight = 50 + score / 20;
         fill.style.setProperty("--fill-height", `${fillHeight}%`);
+        this.setEvaluationTextPos(turn, type, score);
+      });
+    },
+    setEvaluationTextPos(turn, type, score) {
+      this.$nextTick(() => {
+        const text = document.getElementById("evaluation-text");
+        if (
+          score >= 0 &&
+          (type === "cp" || (type === "mate" && turn !== "w"))
+        ) {
+          // White is better or even
+          text.style.setProperty("--text-color", "#403d39");
+          text.style.setProperty("--text-top", "unset");
+          text.style.setProperty("--text-bottom", "2%");
+        } else {
+          // Black is better
+          text.style.setProperty("--text-color", "white");
+          text.style.setProperty("--text-top", "2%");
+          text.style.setProperty("--text-bottom", "unset");
+        }
       });
     },
   },
