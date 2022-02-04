@@ -380,6 +380,9 @@ export default {
         } else {
           this.setManualHighlight(square.squareID);
         }
+      } else {
+        this.clearManualHighlights();
+        this.clearArrows();
       }
       this.arrowFrom = "";
     },
@@ -427,15 +430,8 @@ export default {
       this.resizeBoard(window.outerWidth, window.outerHeight);
     },
     resizeBoard(width, height) {
-      const minBoardSize = 400;
       var boardSize = Math.floor(0.8 * Math.min(width, height));
       boardSize -= boardSize % 8;
-      if (
-        boardSize <= minBoardSize ||
-        (this.currentBoardSize && boardSize === this.currentBoardSize)
-      ) {
-        return;
-      }
       this.currentBoardSize = boardSize;
       // Change styles
       const boardContainer = document.getElementById("board-container");
@@ -507,7 +503,7 @@ export default {
   --coord-dark-color: #edeed1;
   --legal-circle-color: rgba(0, 0, 0, 0.2);
 
-  --board-size-min: 400px;
+  --board-size-min: 200px;
   --board-size: min(80vh, 80vw);
   --coord-size: max(
     calc(var(--board-size) / 45),
