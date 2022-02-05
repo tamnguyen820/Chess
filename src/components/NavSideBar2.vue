@@ -84,10 +84,11 @@ export default {
     padding-left: clamp(1rem, 2.5vw, 2rem);
     padding-top: clamp(3rem, 6vw, 6rem);
     padding-right: clamp(3rem, 6vw, 6rem);
-    background: rgba(68, 114, 202, 0.7);
+    background: rgba(68, 114, 202);
     width: max-content;
     height: 100vh;
     @supports (backdrop-filter: blur(1rem)) {
+      background: rgba(68, 114, 202, 0.75);
       backdrop-filter: blur(1rem);
     }
     transition: var(--tran-03);
@@ -107,11 +108,12 @@ export default {
   .primary-navigation[data-visible="false"] {
     transform: translateX(-100%);
   }
-  @media (max-width: 787.98px) {
+  @media (max-width: 767.98px) {
     .primary-navigation {
       width: 100%;
       text-align: center;
       padding-right: 0;
+      padding-left: 0;
     }
     .primary-navigation[data-visible="false"] {
       transform: translateY(-100%);

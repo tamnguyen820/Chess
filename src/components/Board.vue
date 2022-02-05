@@ -4,8 +4,8 @@
     <div
       id="board"
       class="board unselectable"
-      :class="{ 'flipped-col': flipBoard }"
-      :style="{ backgroundImage: 'url(' + boardImage + ')' }"
+      :class="[boardTheme, { 'flipped-col': flipBoard }]"
+      :style="{ backgroundImage: 'url(' + boardUrl + ')' }"
     >
       <div
         :class="{ 'flipped-row': flipBoard }"
@@ -151,7 +151,6 @@ export default {
   },
   data() {
     return {
-      srcURL: "./assets/images/board/",
       boardModel: [],
       promotionOptions: ["Q", "N", "R", "B"],
       currentBoardSize: null,
@@ -167,6 +166,7 @@ export default {
   computed: {
     ...mapGetters({
       boardTheme: "settings/getBoardTheme",
+      boardUrl: "settings/getBoardUrl",
       showLegal: "settings/showLegalMoves",
       showCoordinates: "settings/showCoordinates",
       flipBoard: "settings/getFlipBoard",
@@ -220,14 +220,6 @@ export default {
         h1: [{ letter: "1", class: "coord-rank coord-light" }],
       };
       return this.flipBoard ? coordsFlipped : coords;
-    },
-
-    boardImage() {
-      const extension = this.boardTheme.substr(this.boardTheme.length - 4);
-      var subdir = extension === ".svg" ? "svg/" : "";
-      this.boardImg = this.srcURL + subdir + this.boardTheme;
-      const imageURL = this.srcURL + subdir + this.boardTheme;
-      return imageURL;
     },
 
     configuration() {
@@ -497,17 +489,14 @@ export default {
 <style lang="scss" scoped>
 .board-container {
   --drag-outline-color: rgba(0, 0, 0, 0.15);
-  --move-highlight-color: rgba(255, 255, 0, 0.55);
   --manual-highlight-color: rgba(235, 97, 80, 0.8);
-  --coord-light-color: #779952;
-  --coord-dark-color: #edeed1;
-  --legal-circle-color: rgba(0, 0, 0, 0.2);
+  --legal-circle-color: rgba(0, 0, 0, 0.3);
 
   --board-size-min: 200px;
   --board-size: min(80vh, 80vw);
   --coord-size: max(
-    calc(var(--board-size) / 45),
-    calc(var(--board-size-min) / 45)
+    calc(var(--board-size) / 40),
+    calc(var(--board-size-min) / 40)
   );
   --drag-outline-size: max(
     calc(var(--board-size) / 120),
@@ -552,9 +541,8 @@ export default {
     background-repeat: no-repeat;
     background-size: contain;
     min-width: var(--board-size-min);
-    min-height: var(--board-size-min);
     width: var(--board-size);
-    height: var(--board-size);
+    aspect-ratio: 1;
     display: flex;
     flex-direction: column;
     flex-wrap: wrap;
@@ -569,16 +557,16 @@ export default {
         .coord {
           z-index: 0;
           position: absolute;
-          font-weight: 500;
+          font-weight: 600;
           font-size: var(--coord-size);
         }
         .coord-rank {
           margin-top: 5%;
-          margin-left: 5%;
+          margin-left: 6%;
         }
         .coord-file {
-          margin-top: 72%;
-          margin-left: 82%;
+          margin-top: 70%;
+          margin-left: 80%;
         }
         .coord-light {
           color: var(--coord-light-color);
@@ -632,7 +620,7 @@ export default {
         background-color: var(--drag-outline-color) !important;
       }
       .move-highlight {
-        background-color: var(--move-highlight-color);
+        background: var(--move-highlight-color);
         opacity: 0.95;
       }
       .manual-highlight {

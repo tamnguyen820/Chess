@@ -30,20 +30,27 @@ export default {};
   .main-area {
     // margin-top: auto;
     // margin-bottom: auto;
-    margin-right: max(3%, 15px);
+    margin-right: 15px;
     display: flex;
     .eval-area {
-      margin-right: max(2%, 10px);
+      margin-right: 10px;
     }
   }
   .side-bar {
     height: 95%;
     min-width: 220px;
-    min-height: 500px;
     width: 30%;
   }
   @media (max-width: 767.98px) {
+    margin-block: 15%;
     flex-direction: column;
+    .main-area {
+      margin-right: 0;
+    }
+    .side-bar {
+      margin-top: 20px;
+      width: 60%;
+    }
   }
 }
 </style>

@@ -134,8 +134,10 @@ export default {
       this.$nextTick(() => {
         const text = document.getElementById("evaluation-text");
         if (
-          score >= 0 &&
-          (type === "cp" || (type === "mate" && turn !== "w"))
+          (type === "cp" && score >= 0) ||
+          (type === "mate" && turn === "w" && score > 0) ||
+          (type === "mate" && turn === "b" && score < 0) ||
+          (turn === "mate" && score === 0 && turn === "w")
         ) {
           // White is better or even
           text.style.setProperty("--text-color", "#403d39");
@@ -161,6 +163,8 @@ $white-color: white;
   --bar-height: 800px;
   --bar-width: 25px;
 
+  min-height: 200px;
+  min-width: 10px;
   height: var(--bar-height);
   width: var(--bar-width);
   background-color: $black-color;

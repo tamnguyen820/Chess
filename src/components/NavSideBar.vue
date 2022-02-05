@@ -349,7 +349,7 @@ body.dark .text {
   color: var(--text-color);
 }
 
-@media (max-width: 768px) {
+@media (max-width: 767.98px) {
   .sidebar.close {
     display: none;
   }

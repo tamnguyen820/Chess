@@ -200,7 +200,7 @@ export default {
 <style  lang="scss" scoped>
 $background-color: #f0f0f0;
 
-$avatar-size: max(3rem, 30px);
+$avatar-size: clamp(2.5rem, 3.5vw, 5rem);
 
 $captured-piece-size: min(1.5rem, 20px);
 
@@ -218,10 +218,12 @@ $button-hover-color: lightblue;
 .side-bar {
   height: 100%;
   width: 100%;
+  min-height: 500px;
   background-color: $background-color;
   display: flex;
   flex-direction: column;
   border-radius: 5px;
+  font-size: clamp(0.7rem, calc($avatar-size/ 3.5), 1rem);
 
   .header-area {
     height: 25%;
@@ -230,12 +232,13 @@ $button-hover-color: lightblue;
     align-items: center;
     padding: 10px 0 10px 0;
     .flip-board {
-      height: calc(0.6 * $avatar-size);
       width: calc(0.6 * $avatar-size);
+      aspect-ratio: 1;
+      margin-top: 5px;
       margin-left: 10px;
       .flip-icon {
-        height: calc(0.5 * $avatar-size);
-        width: calc(0.5 * $avatar-size);
+        width: calc(0.4 * $avatar-size);
+        aspect-ratio: 1;
         transform: rotate(90deg);
         user-select: none;
         &:hover {
@@ -251,31 +254,27 @@ $button-hover-color: lightblue;
     .player-area {
       display: flex;
       flex-direction: column;
-      padding-left: 5px;
       width: 100%;
       .player {
         display: flex;
-        margin: 10px 0 10px 0;
+        margin: 8px 0 8px 0;
         width: 100%;
         .avatar {
           height: $avatar-size;
           width: $avatar-size;
           background-color: white;
-          padding: 7px;
+          padding: calc($avatar-size/8);
           border-radius: 5px;
         }
         .player-info {
           display: flex;
           flex-wrap: wrap;
           flex-direction: column;
-          // justify-content: space-between;
           margin-left: 7.5px;
-          overflow: auto;
           width: 100%;
           .name {
             overflow-wrap: break-word;
             font-weight: 600;
-            font-size: 0.9rem;
           }
           .capture-area {
             display: flex;
@@ -297,7 +296,6 @@ $button-hover-color: lightblue;
             .advantage {
               margin: auto 0 auto 2px;
               font-weight: 400;
-              font-size: 0.85rem;
               color: $opening-color;
             }
           }
@@ -320,10 +318,10 @@ $button-hover-color: lightblue;
   }
 
   .turn-area {
-    font-size: 0.9rem;
     height: 70%;
     width: 100%;
     background-color: white;
+    flex-grow: 1;
     .opening {
       padding: 15px 20px 15px 20px;
       color: $opening-color;
@@ -350,7 +348,7 @@ $button-hover-color: lightblue;
       }
       .moves {
         width: 80%;
-        font-weight: 500;
+        font-weight: 600;
         display: flex;
         .move {
           min-width: 30%;
@@ -384,8 +382,8 @@ $button-hover-color: lightblue;
       overflow: hidden;
       min-height: 30px;
       max-height: 100px;
-      height: 65%;
-      width: 30%;
+      aspect-ratio: 10/6;
+      width: 27%;
       border-radius: 5px;
       background-color: $button-color;
       border-style: none;

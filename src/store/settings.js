@@ -3,9 +3,9 @@ export const settings = {
 
   state() {
     return {
-      boardTheme: "neogreen.svg",
+      boardTheme: "danyablue.svg",
       boardSize: 800,
-      pieceTheme: "neo",
+      pieceTheme: "merida",
       showLegal: true,
       showCoords: true,
       soundOn: true,
@@ -39,7 +39,15 @@ export const settings = {
 
   getters: {
     getBoardTheme(state) {
-      return state.boardTheme
+      return state.boardTheme.substring(0, state.boardTheme.indexOf("."))
+    },
+    getBoardUrl(state) {
+      const srcURL = "./assets/images/board/";
+      const theme = state.boardTheme;
+      const extension = theme.substr(theme.length - 4);
+      var subdir = extension === ".svg" ? "svg/" : "";
+      const imageURL = srcURL + subdir + theme;
+      return imageURL;
     },
     getBoardSize(state) {
       return state.boardSize
