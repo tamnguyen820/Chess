@@ -92,7 +92,11 @@
       :class="{ 'flipped-arrow-container': flipBoard }"
     >
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800">
-        <g v-for="arrow in arrows" :key="arrow.from + arrow.to">
+        <g
+          v-for="arrow in arrows"
+          :key="arrow.from + arrow.to"
+          class="arrow-highlight"
+        >
           <defs>
             <marker
               :id="'arrowhead-' + arrow.from + arrow.to"
@@ -102,7 +106,7 @@
               refY="1.5"
               orient="auto"
             >
-              <polygon points="0 0, 3 1.5, 0 3" fill="#FFAA00" />
+              <polygon points="0 0, 3 1.5, 0 3" class="fill-color" />
             </marker>
           </defs>
           <line
@@ -110,7 +114,7 @@
             :y1="arrow.y1"
             :x2="arrow.x2"
             :y2="arrow.y2"
-            stroke="#FFAA00"
+            class="stroke-color"
             stroke-width="2.5%"
             :marker-end="`url(#arrowhead-${arrow.from + arrow.to})`"
           />
@@ -379,10 +383,39 @@ export default {
       this.arrowFrom = "";
     },
     addNewArrow(from, to) {
-      const x1 = Math.abs(from[0].charCodeAt() - "a".charCodeAt()) * 100 + 50;
-      const y1 = Math.abs(from[1].charCodeAt() - "8".charCodeAt()) * 100 + 50;
-      const x2 = Math.abs(to[0].charCodeAt() - "a".charCodeAt()) * 100 + 50;
-      const y2 = Math.abs(to[1].charCodeAt() - "8".charCodeAt()) * 100 + 50;
+      const arrowIndex = this.arrows.findIndex(
+        (arrow) => arrow.from === from && arrow.to === to
+      );
+      if (arrowIndex >= 0) {
+        // If arrow already exists, remove it
+        this.arrows.splice(arrowIndex, 1);
+        return;
+      }
+
+      var x1 = Math.abs(from[0].charCodeAt() - "a".charCodeAt()) * 100 + 50;
+      var y1 = Math.abs(from[1].charCodeAt() - "8".charCodeAt()) * 100 + 50;
+      var x2 = Math.abs(to[0].charCodeAt() - "a".charCodeAt()) * 100 + 50;
+      var y2 = Math.abs(to[1].charCodeAt() - "8".charCodeAt()) * 100 + 50;
+
+      const xDif = x1 - x2;
+      const yDif = y1 - y2;
+
+      if (xDif > 0) {
+        x1 -= 20;
+        x2 += 20;
+      } else if (xDif < 0) {
+        x1 += 20;
+        x2 -= 20;
+      }
+
+      if (yDif > 0) {
+        y1 -= 20;
+        y2 += 20;
+      } else if (yDif < 0) {
+        y1 += 20;
+        y2 -= 20;
+      }
+
       this.arrows.push({
         from,
         to,
@@ -631,10 +664,18 @@ export default {
 
   .arrow-container {
     width: var(--board-size);
-    height: var(--board-size);
+    aspect-ratio: 1;
     z-index: 1;
     pointer-events: none;
-    opacity: 0.7;
+    opacity: 0.8;
+    .arrow-highlight {
+      .fill-color {
+        fill: rgb(255, 170, 0);
+      }
+      .stroke-color {
+        stroke: rgb(255, 170, 0);
+      }
+    }
   }
   .flipped-arrow-container {
     transform: rotate(180deg);

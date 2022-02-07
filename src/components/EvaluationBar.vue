@@ -95,6 +95,7 @@ export default {
       bar.style.setProperty("--bar-width", `${Math.round(height * 0.05)}px`);
     },
     updateEvaluationBar(turn, type, score) {
+      this.setEvaluationTextPos(turn, type, score);
       this.$nextTick(() => {
         const fill = document.getElementById("evaluation-fill");
 
@@ -127,7 +128,6 @@ export default {
         // Regular situations
         var fillHeight = 50 + score / 20;
         fill.style.setProperty("--fill-height", `${fillHeight}%`);
-        this.setEvaluationTextPos(turn, type, score);
       });
     },
     setEvaluationTextPos(turn, type, score) {
@@ -135,8 +135,7 @@ export default {
         const text = document.getElementById("evaluation-text");
         if (
           (type === "cp" && score >= 0) ||
-          (type === "mate" && turn === "w" && score > 0) ||
-          (type === "mate" && turn === "b" && score < 0) ||
+          (type === "mate" && score > 0) ||
           (turn === "mate" && score === 0 && turn === "w")
         ) {
           // White is better or even

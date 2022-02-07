@@ -1,6 +1,6 @@
 import { Chess } from "chess.js";
 import LichessServices from "../services/LichessServices.js";
-import playSound from "./sounds.js";
+import playSound from "../scripts/sounds.js";
 
 const pieceValues = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 }
 
