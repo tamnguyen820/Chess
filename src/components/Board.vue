@@ -102,11 +102,11 @@
               :id="'arrowhead-' + arrow.from + arrow.to"
               markerWidth="10"
               markerHeight="3"
-              refX="2"
+              refX="1"
               refY="1.5"
               orient="auto"
             >
-              <polygon points="0 0, 3 1.5, 0 3" class="fill-color" />
+              <polygon points="0.5 0.2, 2.5 1.5, 0.5 2.8" class="fill-color" />
             </marker>
           </defs>
           <line
@@ -127,9 +127,7 @@
 <script>
 // TODO:
 //  Create animations?
-//  Go back and forth between moves? Undo?
 //  Computer moves?
-//  Sound effects?
 
 //  UI components
 //  Refactor board
@@ -399,21 +397,22 @@ export default {
 
       const xDif = x1 - x2;
       const yDif = y1 - y2;
+      const posOffset = 20;
 
       if (xDif > 0) {
-        x1 -= 20;
-        x2 += 20;
+        x1 -= posOffset;
+        x2 += posOffset;
       } else if (xDif < 0) {
-        x1 += 20;
-        x2 -= 20;
+        x1 += posOffset;
+        x2 -= posOffset;
       }
 
       if (yDif > 0) {
-        y1 -= 20;
-        y2 += 20;
+        y1 -= posOffset;
+        y2 += posOffset;
       } else if (yDif < 0) {
-        y1 += 20;
-        y2 -= 20;
+        y1 += posOffset;
+        y2 -= posOffset;
       }
 
       this.arrows.push({

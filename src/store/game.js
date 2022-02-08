@@ -87,7 +87,7 @@ export const game = {
         LichessServices.
           getOpeningInfo(state.openingLine).
           then(res => { state.openingInfo = res.data.opening }).
-          catch(err => console.log(err))
+          catch(err => { console.log(err); state.openingInfo = { eco: "", name: "Custom Position" } })
       }
     },
     async playGame(state) {

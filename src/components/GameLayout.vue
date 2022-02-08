@@ -30,10 +30,10 @@ export default {};
   .main-area {
     // margin-top: auto;
     // margin-bottom: auto;
-    margin-right: 15px;
+    margin-right: 20px;
     display: flex;
     .eval-area {
-      margin-right: 10px;
+      margin-right: 20px;
     }
   }
   .side-bar {

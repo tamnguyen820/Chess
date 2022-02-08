@@ -14,18 +14,24 @@
       class="primary-navigation"
       data-visible="false"
     >
-      <ul>
+      <ul @click="toggleMenu()">
         <li>
-          <a href="#">Home</a>
+          <router-link :to="{ name: 'home' }">Home</router-link>
         </li>
         <li>
-          <a href="#">Play</a>
+          <router-link to="/">Profile</router-link>
         </li>
         <li>
-          <a href="#">Puzzles</a>
+          <router-link :to="{ name: 'play' }">Play</router-link>
         </li>
         <li>
-          <a href="#">Settings</a>
+          <router-link to="/">Puzzles</router-link>
+        </li>
+        <li>
+          <router-link to="/">Analysis</router-link>
+        </li>
+        <li>
+          <router-link to="/">Settings</router-link>
         </li>
       </ul>
     </nav>
@@ -71,7 +77,7 @@ export default {
     cursor: pointer;
     .control-image {
       aspect-ratio: 1;
-      width: clamp(1rem, 2.5vw, 2rem);
+      width: clamp(1.5rem, 2.5vw, 3rem);
       content: url("../assets/images/icon/hamburger-menu.svg");
       &.open {
         content: url("../assets/images/icon/close-hamburger-menu.svg");
@@ -82,27 +88,28 @@ export default {
     position: fixed;
     z-index: 1000;
     padding-left: clamp(1rem, 2.5vw, 2rem);
-    padding-top: clamp(3rem, 6vw, 6rem);
+    padding-top: clamp(3rem, 7vw, 6rem);
     padding-right: clamp(3rem, 6vw, 6rem);
     background: rgba(68, 114, 202);
     width: max-content;
     height: 100vh;
     @supports (backdrop-filter: blur(1rem)) {
-      background: rgba(68, 114, 202, 0.75);
+      // background: rgba(68, 114, 202, 0.75);
+      background: rgba(112, 60, 26, 0.8);
       backdrop-filter: blur(1rem);
     }
     transition: var(--tran-03);
     ul {
       list-style: none;
       li {
-        padding-block: clamp(0.5rem, 1.5vw, 1rem);
+        padding-block: clamp(0.5rem, 1vw, 1rem);
       }
     }
     a {
       text-decoration: none;
-      color: white;
+      color: var(--off-white);
       font-weight: 600;
-      font-size: clamp(1rem, 2.5vw, 2rem);
+      font-size: clamp(1rem, 2vw, 2rem);
     }
   }
   .primary-navigation[data-visible="false"] {

@@ -41,13 +41,13 @@
         </div>
       </div>
     </div>
-    <div class="turn-area scroll-area" id="scroll-turn">
-      <div class="opening">
-        <div>
-          <span :v-if="opening.eco">{{ opening.eco }}</span>
-          {{ opening.name }}
-        </div>
+    <div class="opening">
+      <div>
+        <span :v-if="opening.eco">{{ opening.eco }}</span>
+        {{ opening.name }}
       </div>
+    </div>
+    <div class="turn-area scroll-area">
       <div
         class="turn"
         v-for="turn in shortHistory"
@@ -226,7 +226,8 @@ $button-hover-color: lightblue;
   font-size: clamp(0.7rem, calc($avatar-size/ 3.5), 1rem);
 
   .header-area {
-    height: 25%;
+    // height: 25%;
+    flex-basis: 25%;
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -243,7 +244,7 @@ $button-hover-color: lightblue;
         user-select: none;
         &:hover {
           cursor: pointer;
-          transform: rotate(90deg) scale(1.1);
+          transform: rotate(90deg) scale(1.075);
         }
       }
     }
@@ -309,40 +310,40 @@ $button-hover-color: lightblue;
   }
   ::-webkit-scrollbar-thumb {
     background-color: $scrollbar-color;
-    border-radius: 10px;
   }
   .scroll-area {
+    height: 100%;
     overflow: auto; // Gecko based
     overflow: overlay; // WebKit + Blink based
     scrollbar-gutter: stable;
   }
 
+  .opening {
+    padding: 15px 20px 15px 20px;
+    color: $opening-color;
+    overflow-wrap: break-word;
+    top: 0;
+    background-color: white;
+    font-weight: 400;
+    span {
+      font-weight: 600;
+    }
+  }
+
   .turn-area {
-    height: 70%;
+    // height: 70%;
+    flex-basis: 60%;
     width: 100%;
     background-color: white;
-    flex-grow: 1;
-    .opening {
-      padding: 15px 20px 15px 20px;
-      color: $opening-color;
-      overflow-wrap: break-word;
-      position: -webkit-sticky; /* Safari */
-      position: sticky;
-      top: 0;
-      background-color: white;
-      font-weight: 400;
-      span {
-        font-weight: 600;
-      }
-    }
+
     .turn {
       display: flex;
       padding: 10px 20px 10px 20px;
-      &:nth-child(2n-1) {
+      &:nth-child(2n) {
         background-color: $move-second-background;
       }
       .turn-num {
-        min-width: 20px;
+        min-width: 25px;
         flex: 0 0 10%;
         font-weight: 400;
       }
@@ -373,7 +374,8 @@ $button-hover-color: lightblue;
   .button-area {
     padding-top: 10px;
     padding-bottom: 10px;
-    height: 14%;
+    // height: 14%;
+    flex-basis: 15%;
     display: flex;
     justify-content: space-evenly;
     align-items: center;

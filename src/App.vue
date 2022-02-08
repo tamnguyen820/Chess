@@ -1,8 +1,7 @@
 <template>
   <div class="app">
-    <!-- <NavSideBar /> -->
     <NavSideBar2 />
-    <ChessGame />
+    <router-view />
   </div>
 </template>
 
