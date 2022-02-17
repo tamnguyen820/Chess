@@ -23,6 +23,7 @@ export default {};
   height: 100vh;
   width: 100%;
   display: flex;
+  z-index: 1;
 
   .home-text {
     flex-basis: 80%;
@@ -43,16 +44,17 @@ export default {};
       }
       .title {
         font-family: "Playfair Display", serif;
-        font-size: 110px;
+        // font-size: 110px;
+        font-size: clamp(6.25rem, 8vw, 8rem);
         font-weight: 900;
       }
       .subtext {
         font-family: "DM Serif Text", serif;
-        font-size: 24px;
+        font-size: clamp(1.5rem, 1.6vw, 3rem);
         font-style: italic;
         a {
           font-family: "DM Serif Text", serif;
-          font-size: 24px;
+          font-size: clamp(1.5rem, 1.6vw, 3rem);
           font-weight: 400;
           font-style: italic;
         }
@@ -70,7 +72,7 @@ export default {};
   }
 }
 
-@media (max-width: 767.98px) {
+@media (max-width: 50rem) {
   .home-page {
     .home-text {
       flex-basis: 100%;

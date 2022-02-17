@@ -1,8 +1,7 @@
 <template>
-  <div class="board-container" id="board-container">
+  <div class="board-container" :id="`board-container-${id}`">
     <!-- Board -->
     <div
-      id="board"
       class="board unselectable"
       :class="[boardTheme, { 'flipped-col': flipBoard }]"
       :style="{ backgroundImage: 'url(' + boardUrl + ')' }"
@@ -14,6 +13,7 @@
         :key="rank"
       >
         <div
+          :id="square.squareID"
           v-for="square in rank"
           :key="square.squareID"
           class="square"
@@ -23,6 +23,7 @@
               moveHighlights.includes(square.squareID) ||
               (!isInReview && square === startSquare),
             'manual-highlight': manualHighlights[square.squareID],
+            'arrow-keyboard-highlight': square.squareID === arrowFromKeyboard,
           }"
           @click="handleClick($event, square)"
           @dragstart="handleDragStart($event, square)"
@@ -33,6 +34,9 @@
           oncontextmenu="return false;"
           @mousedown="handleMouseDown($event, square)"
           @mouseup="handleMouseUp($event, square)"
+          tabindex="0"
+          @keyup="handleKeyUp($event, square)"
+          @keydown="handleKeyDown($event, square)"
         >
           <!-- Coord -->
           <div
@@ -62,6 +66,8 @@
           <!-- Promotion -->
           <div v-if="square === promotionSquare" class="relative-container">
             <div
+              id="promotion-options"
+              tabindex="0"
               class="promotion-options"
               :class="{
                 'promotion-options-flipped':
@@ -74,6 +80,8 @@
                 :key="option"
                 class="option"
                 @click="makePromotionMove(option)"
+                tabindex="0"
+                @keyup="handleKeyUpPromotion($event, option)"
               >
                 <Piece :pieceName="option" :allowDrag="false" />
               </div>
@@ -92,6 +100,7 @@
       :class="{ 'flipped-arrow-container': flipBoard }"
     >
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800">
+        <!-- Highlight -->
         <g
           v-for="arrow in arrows"
           :key="arrow.from + arrow.to"
@@ -119,6 +128,35 @@
             :marker-end="`url(#arrowhead-${arrow.from + arrow.to})`"
           />
         </g>
+
+        <!-- Suggestions -->
+        <g
+          v-for="arrow in suggestionArrows"
+          :key="arrow.from + arrow.to"
+          class="arrow-suggestion"
+        >
+          <defs>
+            <marker
+              :id="'arrowhead-suggestion-' + arrow.from + arrow.to"
+              markerWidth="10"
+              markerHeight="3"
+              refX="1"
+              refY="1.5"
+              orient="auto"
+            >
+              <polygon points="0.5 0.2, 2.5 1.5, 0.5 2.8" class="fill-color" />
+            </marker>
+          </defs>
+          <line
+            :x1="arrow.x1"
+            :y1="arrow.y1"
+            :x2="arrow.x2"
+            :y2="arrow.y2"
+            class="stroke-color"
+            stroke-width="2.5%"
+            :marker-end="`url(#arrowhead-suggestion-${arrow.from + arrow.to})`"
+          />
+        </g>
       </svg>
     </div>
   </div>
@@ -132,6 +170,7 @@
 //  UI components
 //  Refactor board
 
+import { uniqueId } from "lodash";
 import { mapGetters, mapMutations } from "vuex";
 import Piece from "./Piece.vue";
 
@@ -151,6 +190,16 @@ export default {
   components: {
     Piece,
   },
+  props: {
+    id: {
+      type: String,
+      default: () => uniqueId(),
+    },
+    showSuggestions: {
+      type: Boolean,
+      default: false,
+    },
+  },
   data() {
     return {
       boardModel: [],
@@ -163,6 +212,7 @@ export default {
       manualHighlights: {},
       arrows: [],
       arrowFrom: "",
+      arrowFromKeyboard: "",
     };
   },
   computed: {
@@ -178,6 +228,9 @@ export default {
       getTurn: "game/getTurn",
       getLastMove: "game/getLastMove",
       isInReview: "game/isInReview",
+
+      getEngineSuggestions: "engine/getEngineSuggestions",
+      suggestionsOn: "analysisSettings/getSuggestionsOn",
     }),
 
     coords() {
@@ -271,6 +324,27 @@ export default {
       }
       return [];
     },
+
+    suggestionArrows() {
+      if (!this.showSuggestions || !this.suggestionsOn) {
+        return [];
+      }
+      const arr = [];
+      this.getEngineSuggestions.forEach((firstMove) => {
+        if (firstMove.length) {
+          const from = firstMove.slice(0, 2);
+          const to = firstMove.slice(2, 4);
+          arr.push({
+            from,
+            to,
+            ...this.calculateArrowCoord(from, to),
+          });
+        } else {
+          return;
+        }
+      });
+      return arr;
+    },
   },
   methods: {
     ...mapMutations({
@@ -284,6 +358,7 @@ export default {
       //  Reveal hints
       //  Clear manual highlights (& later arrow?)
       const mouse = event.which;
+      const keyCode = event.keyCode;
 
       if (this.promotionSquare) {
         // Cancel promotion move
@@ -295,7 +370,7 @@ export default {
       //    not clicked piece before => temp highlight + hints
       // Click empty square: no special tasks
       // Finally: clear manual highlights (& later arrow?)
-      if (mouse === 1) {
+      if (mouse === 1 || keyCode === 13 || keyCode === 32) {
         if (this.startSquare && this.validateMove(this.startSquare, square)) {
           // promotion is handle somewhere else
           this.makeMove(this.startSquare.squareID, square.squareID);
@@ -389,7 +464,14 @@ export default {
         this.arrows.splice(arrowIndex, 1);
         return;
       }
+      this.arrows.push({
+        from,
+        to,
+        ...this.calculateArrowCoord(from, to),
+      });
+    },
 
+    calculateArrowCoord(from, to) {
       var x1 = Math.abs(from[0].charCodeAt() - "a".charCodeAt()) * 100 + 50;
       var y1 = Math.abs(from[1].charCodeAt() - "8".charCodeAt()) * 100 + 50;
       var x2 = Math.abs(to[0].charCodeAt() - "a".charCodeAt()) * 100 + 50;
@@ -415,14 +497,7 @@ export default {
         y2 -= posOffset;
       }
 
-      this.arrows.push({
-        from,
-        to,
-        x1,
-        y1,
-        x2,
-        y2,
-      });
+      return { x1, y1, x2, y2 };
     },
 
     validateMove(from, to) {
@@ -446,6 +521,9 @@ export default {
       this.pushMove(move);
       this.clearManualHighlights();
       this.clearArrows();
+      if (this.promotionSquare) {
+        document.getElementById(this.promotionSquare.squareID).focus();
+      }
       this.promotionSquare = null;
       this.startSquare = null;
     },
@@ -458,7 +536,9 @@ export default {
       boardSize -= boardSize % 8;
       this.currentBoardSize = boardSize;
       // Change styles
-      const boardContainer = document.getElementById("board-container");
+      const boardContainer = document.getElementById(
+        "board-container-" + this.id
+      );
       boardContainer.style.setProperty("--board-size", `${boardSize}px`);
 
       this.setBoardSize(boardSize);
@@ -501,6 +581,7 @@ export default {
       this.dragEnterSquare = null;
     },
     setManualHighlight(id) {
+      console.log(this.manualHighlights);
       if (this.manualHighlights[id]) {
         delete this.manualHighlights[id];
       } else {
@@ -513,6 +594,75 @@ export default {
     clearArrows() {
       this.arrows = [];
       this.arrowFrom = "";
+    },
+
+    // Accessibility
+    handleKeyUp(e, square) {
+      const code = e.keyCode;
+      if (code === 13 || code === 32) {
+        this.handleClick(e, square);
+        this.arrowFrom = "";
+        this.arrowFromKeyboard = "";
+      } else if (code === 17) {
+        // Arrows
+        if (!this.arrowFrom) {
+          this.arrowFrom = square.squareID;
+          this.arrowFromKeyboard = square.squareID;
+        } else {
+          if (this.arrowFrom !== square.squareID) {
+            this.addNewArrow(this.arrowFrom, square.squareID);
+          }
+          this.arrowFrom = "";
+          this.arrowFromKeyboard = "";
+        }
+      } else if (code === 88) {
+        // Manual highlights
+        this.setManualHighlight(square.squareID);
+      }
+    },
+    handleKeyDown(e, square) {
+      const code = e.keyCode;
+      if (code !== 37 && code !== 38 && code !== 39 && code !== 40) {
+        return;
+      }
+      var file = square.squareID[0].charCodeAt();
+      var rank = square.squareID[1].charCodeAt();
+      const offset = this.flipBoard ? -1 : 1;
+      if (code === 37) {
+        // Left arrow
+        file -= offset;
+      } else if (code === 38) {
+        // Up arrow
+        rank += offset;
+      } else if (code == 39) {
+        // Right arrow
+        file += offset;
+      } else if (code === 40) {
+        // Down arrow
+        rank -= offset;
+      }
+      file = String.fromCharCode(file);
+      rank = String.fromCharCode(rank);
+      if ("a" <= file && file <= "h" && "1" <= rank && rank <= "8") {
+        const nextSquare = document.getElementById(file + rank);
+        nextSquare.focus();
+      }
+    },
+    handleKeyUpPromotion(e, option) {
+      const code = e.keyCode;
+      if (code === 13 || code == 32) {
+        this.makePromotionMove(option);
+      }
+    },
+  },
+  watch: {
+    promotionSquare(newValue) {
+      this.$nextTick(() => {
+        if (newValue) {
+          const optionsDisplay = document.getElementById("promotion-options");
+          optionsDisplay.focus();
+        }
+      });
     },
   },
 };
@@ -578,6 +728,7 @@ export default {
     display: flex;
     flex-direction: column;
     flex-wrap: wrap;
+    overflow: hidden;
     .rank {
       display: flex;
       flex-direction: row;
@@ -641,22 +792,31 @@ export default {
             width: calc(var(--board-size) / 8);
             height: calc(var(--board-size) / 8);
             &:hover {
-              background: lightblue;
+              background: lightblue !important;
+            }
+            &:focus {
+              background: lightblue !important;
             }
           }
+          &:focus-visible {
+            background-color: lightblue !important;
+          }
+        }
+        &:focus-visible {
+          background-color: var(--manual-highlight-color) !important;
         }
       }
       .drag-enter {
-        // outline-offset: calc(-1 * var(--drag-outline-size));
-        // outline: var(--drag-outline-size) solid var(--drag-outline-color);
         background-color: var(--drag-outline-color) !important;
       }
       .move-highlight {
         background: var(--move-highlight-color);
-        opacity: 0.95;
       }
       .manual-highlight {
         background-color: var(--manual-highlight-color) !important;
+      }
+      .arrow-keyboard-highlight {
+        background-color: rgba(255, 170, 0, 0.8) !important;
       }
     }
   }
@@ -673,6 +833,14 @@ export default {
       }
       .stroke-color {
         stroke: rgb(255, 170, 0);
+      }
+    }
+    .arrow-suggestion {
+      .fill-color {
+        fill: rgb(149, 187, 74);
+      }
+      .stroke-color {
+        stroke: rgb(149, 187, 74);
       }
     }
   }

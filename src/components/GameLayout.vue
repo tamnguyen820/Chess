@@ -2,14 +2,14 @@
   <div class="wrapper">
     <div class="main-area">
       <div class="eval-area">
-        <slot name="eval-bar" />
+        <slot name="evalBar" />
       </div>
       <div class="board">
         <slot name="board" />
       </div>
     </div>
     <div class="side-bar">
-      <slot name="side-bar" />
+      <slot name="sideBar" />
     </div>
   </div>
 </template>
@@ -41,11 +41,14 @@ export default {};
     min-width: 220px;
     width: 30%;
   }
-  @media (max-width: 767.98px) {
-    margin-block: 15%;
+  @media (max-width: 50rem) {
+    margin-block: 20%;
     flex-direction: column;
     .main-area {
       margin-right: 0;
+      .eval-area {
+        margin-right: 10px;
+      }
     }
     .side-bar {
       margin-top: 20px;

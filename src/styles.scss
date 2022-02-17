@@ -5,6 +5,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Text:ital@0;1&display=swap');
 
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&display=swap');
+
 #app {
   height: 100%;
   width: 100%;
@@ -18,23 +20,54 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  &:focus-visible {
+    // outline-color: #388fe7;
+    outline: 2px solid #388fe7;
+    border-radius: 2px;
+  }
 }
 
 :root {
   /* ===== Colors ===== */
   --body-color: #e4e9f7;
   --sidebar-color: #fff;
+  --scrollbar-color: rgb(158, 158, 158);
+  --scrollbar-track-color: rgb(233, 233, 233);
   --primary-color: #695cfe;
   --primary-color-light: #f6f5ff;
   --toggle-color: #ddd;
   --text-color: #707070;
   --off-white: #fffce9;
+  --button-color: #dbd9d7;
+  --button-shadow-color: #bdbcb8;
+  --button-hover-color: lightblue;
 
   /* ====== Transition ====== */
   --tran-01: all 0.1s ease;
   --tran-02: all 0.2s ease;
   --tran-03: all 0.3s ease;
   --tran-04: all 0.4s ease;
+
+  --modal-heading-font-size: clamp(1rem, 1.4vw, 1.75rem);
+  --modal-content-font-size: calc(0.9 * var(--modal-heading-font-size));
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background-color: var(--scrollbar-track-color);
+}
+::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-color);
+}
+
+@supports(scrollbar-color: red blue) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-color) var(--scrollbar-track-color);
+  }
 }
 
 body {

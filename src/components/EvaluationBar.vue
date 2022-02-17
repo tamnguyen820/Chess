@@ -1,12 +1,13 @@
 <template>
   <div
-    id="evaluation-bar"
+    v-if="getEngineOn"
+    :id="`evaluation-bar-${id}`"
     class="evaluation-bar"
     :class="{ flipped: flipBoard }"
   >
-    <div id="evaluation-fill" class="evaluation-fill"></div>
+    <div :id="`evaluation-fill-${id}`" class="evaluation-fill"></div>
     <span
-      id="evaluation-text"
+      :id="`evaluation-text-${id}`"
       class="evaluation-text"
       :class="{ flipped: flipBoard }"
       >{{ evaluation }}</span
@@ -15,6 +16,7 @@
 </template>
 
 <script>
+import { uniqueId } from "lodash";
 import { mapGetters, mapMutations } from "vuex";
 
 export default {
@@ -26,6 +28,12 @@ export default {
       this.setBarHeight(this.boardSize);
     });
   },
+  props: {
+    id: {
+      type: String,
+      default: () => uniqueId(),
+    },
+  },
   computed: {
     ...mapGetters({
       boardSize: "settings/getBoardSize",
@@ -36,7 +44,8 @@ export default {
       draw: "game/isDraw",
 
       getEval: "engine/getEval",
-      pv: "engine/getPv",
+
+      getEngineOn: "analysisSettings/getEngineOn",
     }),
     evaluation() {
       if (this.draw) {
@@ -76,28 +85,43 @@ export default {
   },
   watch: {
     fen(newValue) {
-      this.loadFen(newValue);
-      this.evaluate();
+      if (this.getEngineOn) {
+        this.loadFen(newValue);
+        this.evaluate();
+      }
     },
     boardSize(newValue) {
       this.setBarHeight(newValue);
+    },
+    getEngineOn(on) {
+      if (on) {
+        this.$nextTick(() => {
+          this.createEngine(this.fen);
+          this.setBarHeight(this.boardSize);
+        });
+      } else {
+        this.destroyEngine();
+      }
     },
   },
   methods: {
     ...mapMutations({
       createEngine: "engine/createEngine",
+      destroyEngine: "engine/destroyEngine",
       loadFen: "engine/loadFen",
       evaluate: "engine/evaluate",
     }),
     setBarHeight(height) {
-      const bar = document.getElementById("evaluation-bar");
-      bar.style.setProperty("--bar-height", `${height}px`);
-      bar.style.setProperty("--bar-width", `${Math.round(height * 0.05)}px`);
+      if (this.getEngineOn) {
+        const bar = document.getElementById("evaluation-bar-" + this.id);
+        bar.style.setProperty("--bar-height", `${height}px`);
+        bar.style.setProperty("--bar-width", `${Math.round(height * 0.05)}px`);
+      }
     },
     updateEvaluationBar(turn, type, score) {
       this.setEvaluationTextPos(turn, type, score);
       this.$nextTick(() => {
-        const fill = document.getElementById("evaluation-fill");
+        const fill = document.getElementById("evaluation-fill-" + this.id);
 
         // Mate: full bar
         if (type === "mate") {
@@ -132,11 +156,11 @@ export default {
     },
     setEvaluationTextPos(turn, type, score) {
       this.$nextTick(() => {
-        const text = document.getElementById("evaluation-text");
+        const text = document.getElementById("evaluation-text-" + this.id);
         if (
           (type === "cp" && score >= 0) ||
           (type === "mate" && score > 0) ||
-          (turn === "mate" && score === 0 && turn === "w")
+          (type === "mate" && score === 0 && turn === "b")
         ) {
           // White is better or even
           text.style.setProperty("--text-color", "#403d39");
@@ -150,6 +174,9 @@ export default {
         }
       });
     },
+  },
+  unmounted() {
+    this.destroyEngine();
   },
 };
 </script>
