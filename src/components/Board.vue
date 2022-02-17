@@ -1,11 +1,10 @@
 <template>
-  <div class="board-container" id="board-container">
+  <div class="board-container" :id="`board-container-${id}`">
     <!-- Board -->
     <div
-      id="board"
       class="board unselectable"
-      :class="{ 'flipped-col': flipBoard }"
-      :style="{ backgroundImage: 'url(' + boardImage + ')' }"
+      :class="[boardTheme, { 'flipped-col': flipBoard }]"
+      :style="{ backgroundImage: 'url(' + boardUrl + ')' }"
     >
       <div
         :class="{ 'flipped-row': flipBoard }"
@@ -14,6 +13,7 @@
         :key="rank"
       >
         <div
+          :id="square.squareID"
           v-for="square in rank"
           :key="square.squareID"
           class="square"
@@ -23,6 +23,7 @@
               moveHighlights.includes(square.squareID) ||
               (!isInReview && square === startSquare),
             'manual-highlight': manualHighlights[square.squareID],
+            'arrow-keyboard-highlight': square.squareID === arrowFromKeyboard,
           }"
           @click="handleClick($event, square)"
           @dragstart="handleDragStart($event, square)"
@@ -33,6 +34,9 @@
           oncontextmenu="return false;"
           @mousedown="handleMouseDown($event, square)"
           @mouseup="handleMouseUp($event, square)"
+          tabindex="0"
+          @keyup="handleKeyUp($event, square)"
+          @keydown="handleKeyDown($event, square)"
         >
           <!-- Coord -->
           <div
@@ -62,6 +66,8 @@
           <!-- Promotion -->
           <div v-if="square === promotionSquare" class="relative-container">
             <div
+              id="promotion-options"
+              tabindex="0"
               class="promotion-options"
               :class="{
                 'promotion-options-flipped':
@@ -74,6 +80,8 @@
                 :key="option"
                 class="option"
                 @click="makePromotionMove(option)"
+                tabindex="0"
+                @keyup="handleKeyUpPromotion($event, option)"
               >
                 <Piece :pieceName="option" :allowDrag="false" />
               </div>
@@ -85,19 +93,84 @@
         </div>
       </div>
     </div>
+
+    <!-- Arrows -->
+    <div
+      class="absolute-container arrow-container"
+      :class="{ 'flipped-arrow-container': flipBoard }"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800">
+        <!-- Highlight -->
+        <g
+          v-for="arrow in arrows"
+          :key="arrow.from + arrow.to"
+          class="arrow-highlight"
+        >
+          <defs>
+            <marker
+              :id="'arrowhead-' + arrow.from + arrow.to"
+              markerWidth="10"
+              markerHeight="3"
+              refX="1"
+              refY="1.5"
+              orient="auto"
+            >
+              <polygon points="0.5 0.2, 2.5 1.5, 0.5 2.8" class="fill-color" />
+            </marker>
+          </defs>
+          <line
+            :x1="arrow.x1"
+            :y1="arrow.y1"
+            :x2="arrow.x2"
+            :y2="arrow.y2"
+            class="stroke-color"
+            stroke-width="2.5%"
+            :marker-end="`url(#arrowhead-${arrow.from + arrow.to})`"
+          />
+        </g>
+
+        <!-- Suggestions -->
+        <g
+          v-for="arrow in suggestionArrows"
+          :key="arrow.from + arrow.to"
+          class="arrow-suggestion"
+        >
+          <defs>
+            <marker
+              :id="'arrowhead-suggestion-' + arrow.from + arrow.to"
+              markerWidth="10"
+              markerHeight="3"
+              refX="1"
+              refY="1.5"
+              orient="auto"
+            >
+              <polygon points="0.5 0.2, 2.5 1.5, 0.5 2.8" class="fill-color" />
+            </marker>
+          </defs>
+          <line
+            :x1="arrow.x1"
+            :y1="arrow.y1"
+            :x2="arrow.x2"
+            :y2="arrow.y2"
+            class="stroke-color"
+            stroke-width="2.5%"
+            :marker-end="`url(#arrowhead-suggestion-${arrow.from + arrow.to})`"
+          />
+        </g>
+      </svg>
+    </div>
   </div>
 </template>
 
 <script>
 // TODO:
 //  Create animations?
-//  Go back and forth between moves? Undo?
 //  Computer moves?
-//  Sound effects?
 
 //  UI components
 //  Refactor board
 
+import { uniqueId } from "lodash";
 import { mapGetters, mapMutations } from "vuex";
 import Piece from "./Piece.vue";
 
@@ -109,7 +182,7 @@ export default {
     this.$nextTick(() => {
       window.addEventListener("resize", this.onResize);
     });
-    this.resizeBoard(window.innerWidth, window.innerHeight);
+    this.resizeBoard(window.outerWidth, window.outerHeight);
   },
   beforeUnmount() {
     window.removeEventListener("resize", this.onResize);
@@ -117,9 +190,18 @@ export default {
   components: {
     Piece,
   },
+  props: {
+    id: {
+      type: String,
+      default: () => uniqueId(),
+    },
+    showSuggestions: {
+      type: Boolean,
+      default: false,
+    },
+  },
   data() {
     return {
-      srcURL: "./assets/images/board/",
       boardModel: [],
       promotionOptions: ["Q", "N", "R", "B"],
       currentBoardSize: null,
@@ -129,11 +211,14 @@ export default {
       promotionSquare: null,
       manualHighlights: {},
       arrows: [],
+      arrowFrom: "",
+      arrowFromKeyboard: "",
     };
   },
   computed: {
     ...mapGetters({
       boardTheme: "settings/getBoardTheme",
+      boardUrl: "settings/getBoardUrl",
       showLegal: "settings/showLegalMoves",
       showCoordinates: "settings/showCoordinates",
       flipBoard: "settings/getFlipBoard",
@@ -143,6 +228,9 @@ export default {
       getTurn: "game/getTurn",
       getLastMove: "game/getLastMove",
       isInReview: "game/isInReview",
+
+      getEngineSuggestions: "engine/getEngineSuggestions",
+      suggestionsOn: "analysisSettings/getSuggestionsOn",
     }),
 
     coords() {
@@ -187,14 +275,6 @@ export default {
         h1: [{ letter: "1", class: "coord-rank coord-light" }],
       };
       return this.flipBoard ? coordsFlipped : coords;
-    },
-
-    boardImage() {
-      const extension = this.boardTheme.substr(this.boardTheme.length - 4);
-      var subdir = extension === ".svg" ? "svg/" : "";
-      this.boardImg = this.srcURL + subdir + this.boardTheme;
-      const imageURL = this.srcURL + subdir + this.boardTheme;
-      return imageURL;
     },
 
     configuration() {
@@ -244,9 +324,32 @@ export default {
       }
       return [];
     },
+
+    suggestionArrows() {
+      if (!this.showSuggestions || !this.suggestionsOn) {
+        return [];
+      }
+      const arr = [];
+      this.getEngineSuggestions.forEach((firstMove) => {
+        if (firstMove.length) {
+          const from = firstMove.slice(0, 2);
+          const to = firstMove.slice(2, 4);
+          arr.push({
+            from,
+            to,
+            ...this.calculateArrowCoord(from, to),
+          });
+        } else {
+          return;
+        }
+      });
+      return arr;
+    },
   },
   methods: {
     ...mapMutations({
+      setBoardSize: "settings/setBoardSize",
+
       pushMove: "game/pushMove",
     }),
     handleClick(event, square) {
@@ -255,6 +358,7 @@ export default {
       //  Reveal hints
       //  Clear manual highlights (& later arrow?)
       const mouse = event.which;
+      const keyCode = event.keyCode;
 
       if (this.promotionSquare) {
         // Cancel promotion move
@@ -266,20 +370,20 @@ export default {
       //    not clicked piece before => temp highlight + hints
       // Click empty square: no special tasks
       // Finally: clear manual highlights (& later arrow?)
-      if (mouse === 1) {
+      if (mouse === 1 || keyCode === 13 || keyCode === 32) {
         if (this.startSquare && this.validateMove(this.startSquare, square)) {
           // promotion is handle somewhere else
           this.makeMove(this.startSquare.squareID, square.squareID);
-        } else if (square.pieceName && !this.promotionSquare) {
-          if (this.startSquare !== square) {
+        } else if (!this.promotionSquare) {
+          if (square.pieceName && this.startSquare !== square) {
             this.startSquare = square;
           } else {
             this.startSquare = null;
           }
         }
       }
-      // Arrows later?
       this.clearManualHighlights();
+      this.clearArrows();
       this.clearDragOutline();
     },
     handleDragStart(event, square) {
@@ -293,6 +397,7 @@ export default {
           event.dataTransfer.setData("itemID", square.squareID);
           this.startSquare = square;
           this.clearManualHighlights();
+          this.clearArrows();
           break;
         case 3:
           // Draw arrow?
@@ -300,6 +405,7 @@ export default {
         default:
           // Clear manual highlights (& later arrow?)
           this.clearManualHighlights();
+          this.clearArrows();
           break;
       }
     },
@@ -332,20 +438,66 @@ export default {
     handleMouseDown(event, square) {
       const mouse = event.which;
       if (mouse === 3) {
-        this.arrows.push({
-          from: {
-            x: event.x,
-            y: event.y,
-          },
-        });
+        this.arrowFrom = square.squareID;
       }
     },
     handleMouseUp(event, square) {
       const mouse = event.which;
       if (mouse === 3) {
-        this.setManualHighlight(square.squareID);
-        this.arrows[this.arrows.length - 1]["to"] = { x: event.x, y: event.y };
+        if (this.arrowFrom !== square.squareID) {
+          this.addNewArrow(this.arrowFrom, square.squareID);
+        } else {
+          this.setManualHighlight(square.squareID);
+        }
+      } else {
+        this.clearManualHighlights();
+        this.clearArrows();
       }
+      this.arrowFrom = "";
+    },
+    addNewArrow(from, to) {
+      const arrowIndex = this.arrows.findIndex(
+        (arrow) => arrow.from === from && arrow.to === to
+      );
+      if (arrowIndex >= 0) {
+        // If arrow already exists, remove it
+        this.arrows.splice(arrowIndex, 1);
+        return;
+      }
+      this.arrows.push({
+        from,
+        to,
+        ...this.calculateArrowCoord(from, to),
+      });
+    },
+
+    calculateArrowCoord(from, to) {
+      var x1 = Math.abs(from[0].charCodeAt() - "a".charCodeAt()) * 100 + 50;
+      var y1 = Math.abs(from[1].charCodeAt() - "8".charCodeAt()) * 100 + 50;
+      var x2 = Math.abs(to[0].charCodeAt() - "a".charCodeAt()) * 100 + 50;
+      var y2 = Math.abs(to[1].charCodeAt() - "8".charCodeAt()) * 100 + 50;
+
+      const xDif = x1 - x2;
+      const yDif = y1 - y2;
+      const posOffset = 20;
+
+      if (xDif > 0) {
+        x1 -= posOffset;
+        x2 += posOffset;
+      } else if (xDif < 0) {
+        x1 += posOffset;
+        x2 -= posOffset;
+      }
+
+      if (yDif > 0) {
+        y1 -= posOffset;
+        y2 += posOffset;
+      } else if (yDif < 0) {
+        y1 += posOffset;
+        y2 -= posOffset;
+      }
+
+      return { x1, y1, x2, y2 };
     },
 
     validateMove(from, to) {
@@ -368,27 +520,28 @@ export default {
       }
       this.pushMove(move);
       this.clearManualHighlights();
+      this.clearArrows();
+      if (this.promotionSquare) {
+        document.getElementById(this.promotionSquare.squareID).focus();
+      }
       this.promotionSquare = null;
       this.startSquare = null;
     },
 
     onResize() {
-      this.resizeBoard(window.innerWidth, window.innerHeight);
+      this.resizeBoard(window.outerWidth, window.outerHeight);
     },
     resizeBoard(width, height) {
-      const minBoardSize = 400;
-      var boardSize = Math.floor(0.91 * Math.min(width, height));
+      var boardSize = Math.floor(0.8 * Math.min(width, height));
       boardSize -= boardSize % 8;
-      if (
-        boardSize <= minBoardSize ||
-        (this.currentBoardSize && boardSize === this.currentBoardSize)
-      ) {
-        return;
-      }
       this.currentBoardSize = boardSize;
       // Change styles
-      const boardContainer = document.getElementById("board-container");
+      const boardContainer = document.getElementById(
+        "board-container-" + this.id
+      );
       boardContainer.style.setProperty("--board-size", `${boardSize}px`);
+
+      this.setBoardSize(boardSize);
     },
 
     createBoardModel() {
@@ -428,6 +581,7 @@ export default {
       this.dragEnterSquare = null;
     },
     setManualHighlight(id) {
+      console.log(this.manualHighlights);
       if (this.manualHighlights[id]) {
         delete this.manualHighlights[id];
       } else {
@@ -437,6 +591,79 @@ export default {
     clearManualHighlights() {
       this.manualHighlights = {};
     },
+    clearArrows() {
+      this.arrows = [];
+      this.arrowFrom = "";
+    },
+
+    // Accessibility
+    handleKeyUp(e, square) {
+      const code = e.keyCode;
+      if (code === 13 || code === 32) {
+        this.handleClick(e, square);
+        this.arrowFrom = "";
+        this.arrowFromKeyboard = "";
+      } else if (code === 17) {
+        // Arrows
+        if (!this.arrowFrom) {
+          this.arrowFrom = square.squareID;
+          this.arrowFromKeyboard = square.squareID;
+        } else {
+          if (this.arrowFrom !== square.squareID) {
+            this.addNewArrow(this.arrowFrom, square.squareID);
+          }
+          this.arrowFrom = "";
+          this.arrowFromKeyboard = "";
+        }
+      } else if (code === 88) {
+        // Manual highlights
+        this.setManualHighlight(square.squareID);
+      }
+    },
+    handleKeyDown(e, square) {
+      const code = e.keyCode;
+      if (code !== 37 && code !== 38 && code !== 39 && code !== 40) {
+        return;
+      }
+      var file = square.squareID[0].charCodeAt();
+      var rank = square.squareID[1].charCodeAt();
+      const offset = this.flipBoard ? -1 : 1;
+      if (code === 37) {
+        // Left arrow
+        file -= offset;
+      } else if (code === 38) {
+        // Up arrow
+        rank += offset;
+      } else if (code == 39) {
+        // Right arrow
+        file += offset;
+      } else if (code === 40) {
+        // Down arrow
+        rank -= offset;
+      }
+      file = String.fromCharCode(file);
+      rank = String.fromCharCode(rank);
+      if ("a" <= file && file <= "h" && "1" <= rank && rank <= "8") {
+        const nextSquare = document.getElementById(file + rank);
+        nextSquare.focus();
+      }
+    },
+    handleKeyUpPromotion(e, option) {
+      const code = e.keyCode;
+      if (code === 13 || code == 32) {
+        this.makePromotionMove(option);
+      }
+    },
+  },
+  watch: {
+    promotionSquare(newValue) {
+      this.$nextTick(() => {
+        if (newValue) {
+          const optionsDisplay = document.getElementById("promotion-options");
+          optionsDisplay.focus();
+        }
+      });
+    },
   },
 };
 </script>
@@ -444,13 +671,10 @@ export default {
 <style lang="scss" scoped>
 .board-container {
   --drag-outline-color: rgba(0, 0, 0, 0.15);
-  --move-highlight-color: rgba(255, 255, 0, 0.55);
   --manual-highlight-color: rgba(235, 97, 80, 0.8);
-  --coord-light-color: #779952;
-  --coord-dark-color: #edeed1;
-  --legal-circle-color: rgba(0, 0, 0, 0.2);
+  --legal-circle-color: rgba(0, 0, 0, 0.3);
 
-  --board-size-min: 400px;
+  --board-size-min: 200px;
   --board-size: min(80vh, 80vw);
   --coord-size: max(
     calc(var(--board-size) / 40),
@@ -465,8 +689,8 @@ export default {
     calc(var(--board-size-min) / 25)
   );
   --legal-circle-take-size: max(
-    calc(var(--board-size) / 10),
-    calc(var(--board-size-min) / 10)
+    calc(var(--board-size) / 8),
+    calc(var(--board-size-min) / 8)
   );
   --legal-circle-take-border: max(
     calc(var(--board-size) / 80),
@@ -482,6 +706,7 @@ export default {
   height: 0;
   padding-bottom: 100%;
   width: 100%;
+  position: relative;
 
   .flipped-col {
     flex-direction: column-reverse !important;
@@ -489,19 +714,21 @@ export default {
   .flipped-row {
     flex-direction: row-reverse !important;
   }
+
   .board {
+    z-index: 1;
     margin: auto;
     touch-action: none;
     border-radius: 5px;
     background-repeat: no-repeat;
     background-size: contain;
     min-width: var(--board-size-min);
-    min-height: var(--board-size-min);
     width: var(--board-size);
-    height: var(--board-size);
+    aspect-ratio: 1;
     display: flex;
     flex-direction: column;
     flex-wrap: wrap;
+    overflow: hidden;
     .rank {
       display: flex;
       flex-direction: row;
@@ -510,91 +737,115 @@ export default {
       .square {
         flex: 0 0 12.5%;
         height: 100%;
-        .relative-container {
-          position: relative;
-          .coord {
-            z-index: 0;
-            position: absolute;
-            font-weight: 500;
-            font-size: var(--coord-size);
-          }
-          .coord-rank {
-            margin-top: 5%;
-            margin-left: 5%;
-          }
-          .coord-file {
-            margin-top: 72%;
-            margin-left: 82%;
-          }
-          .coord-light {
-            color: var(--coord-light-color);
-          }
-          .coord-dark {
-            color: var(--coord-dark-color);
-          }
-          .legal-circle {
-            position: absolute;
-            background: var(--legal-circle-color);
-            opacity: 0.7;
-            width: var(--legal-circle-size);
-            height: var(--legal-circle-size);
-            border-radius: 50%;
-            margin-top: 34%;
-            margin-left: 34%;
-          }
-          .legal-circle-take {
-            position: absolute;
-            background: transparent;
-            opacity: 0.7;
-            width: var(--legal-circle-take-size);
-            height: var(--legal-circle-take-size);
-            border-radius: 50%;
-            border-style: solid;
-            border-color: var(--legal-circle-color);
-            border-width: var(--legal-circle-take-border);
-          }
-          .promotion-options-flipped {
-            top: calc(-3 * var(--board-size) / 8);
-          }
-          .promotion-options {
-            position: absolute;
-            background: white;
-            z-index: 100;
+        .coord {
+          z-index: 0;
+          position: absolute;
+          font-weight: 600;
+          font-size: var(--coord-size);
+        }
+        .coord-rank {
+          margin-top: 5%;
+          margin-left: 6%;
+        }
+        .coord-file {
+          margin-top: 70%;
+          margin-left: 80%;
+        }
+        .coord-light {
+          color: var(--coord-light-color);
+        }
+        .coord-dark {
+          color: var(--coord-dark-color);
+        }
+        .legal-circle {
+          position: absolute;
+          background: var(--legal-circle-color);
+          opacity: 0.7;
+          width: var(--legal-circle-size);
+          height: var(--legal-circle-size);
+          border-radius: 50%;
+          margin-top: 34%;
+          margin-left: 34%;
+        }
+        .legal-circle-take {
+          position: absolute;
+          background: transparent;
+          opacity: 0.7;
+          width: var(--legal-circle-take-size);
+          height: var(--legal-circle-take-size);
+          border-radius: 50%;
+          border-style: solid;
+          border-color: var(--legal-circle-color);
+          border-width: var(--legal-circle-take-border);
+        }
+        .promotion-options-flipped {
+          top: calc(-3 * var(--board-size) / 8);
+        }
+        .promotion-options {
+          position: absolute;
+          background: white;
+          z-index: 100;
+          width: calc(var(--board-size) / 8);
+          height: calc(var(--board-size) / 2);
+          box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
+          .option {
             width: calc(var(--board-size) / 8);
-            height: calc(var(--board-size) / 2);
-            box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
-            .option {
-              width: calc(var(--board-size) / 8);
-              height: calc(var(--board-size) / 8);
-              &:hover {
-                background: lightblue;
-              }
+            height: calc(var(--board-size) / 8);
+            &:hover {
+              background: lightblue !important;
+            }
+            &:focus {
+              background: lightblue !important;
             }
           }
+          &:focus-visible {
+            background-color: lightblue !important;
+          }
+        }
+        &:focus-visible {
+          background-color: var(--manual-highlight-color) !important;
         }
       }
       .drag-enter {
-        // outline-offset: calc(-1 * var(--drag-outline-size));
-        // outline: var(--drag-outline-size) solid var(--drag-outline-color);
         background-color: var(--drag-outline-color) !important;
       }
       .move-highlight {
-        background-color: var(--move-highlight-color);
-        opacity: 0.95;
+        background: var(--move-highlight-color);
       }
       .manual-highlight {
         background-color: var(--manual-highlight-color) !important;
       }
-    }
-    .arrow-container {
-      position: relative;
-      .arrow {
-        position: absolute;
-        width: 100px;
-        height: 20px;
-        background-color: black;
+      .arrow-keyboard-highlight {
+        background-color: rgba(255, 170, 0, 0.8) !important;
       }
     }
+  }
+
+  .arrow-container {
+    width: var(--board-size);
+    aspect-ratio: 1;
+    z-index: 1;
+    pointer-events: none;
+    opacity: 0.8;
+    .arrow-highlight {
+      .fill-color {
+        fill: rgb(255, 170, 0);
+      }
+      .stroke-color {
+        stroke: rgb(255, 170, 0);
+      }
+    }
+    .arrow-suggestion {
+      .fill-color {
+        fill: rgb(149, 187, 74);
+      }
+      .stroke-color {
+        stroke: rgb(149, 187, 74);
+      }
+    }
+  }
+  .flipped-arrow-container {
+    transform: rotate(180deg);
   }
 }
 .unselectable {
@@ -603,5 +854,11 @@ export default {
   -moz-user-select: none;
   -webkit-user-select: none;
   -ms-user-select: none;
+}
+.relative-container {
+  position: relative;
+}
+.absolute-container {
+  position: absolute;
 }
 </style>

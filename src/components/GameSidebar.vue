@@ -1,18 +1,28 @@
 <template>
   <div class="side-bar">
     <div class="header-area">
-      <div class="flip-board">
-        <img
-          draggable="false"
-          @click="setFlipBoard"
-          class="flip-icon"
-          src="../assets/images/icon/flip2.svg"
-        />
+      <div class="side-button-container">
+        <button
+          v-if="analysisMode"
+          class="setting-bar"
+          @click="setAnalysisModalOpen(true)"
+        >
+          <img src="../assets/images/icon/setting-bar.svg" />
+        </button>
+        <button
+          v-if="analysisMode"
+          class="import"
+          @click="setImportModalOpen(true)"
+        >
+          <img src="../assets/images/icon/upload.svg" />
+        </button>
       </div>
+      <button class="flip-board" @click="setFlipBoard">
+        <img class="flip-icon" src="../assets/images/icon/flip2.svg" />
+      </button>
       <div class="player-area" :class="{ 'flipped-col': flipBoard }">
         <div class="player" v-for="(player, index) in players" :key="index">
           <img
-            draggable="false"
             class="avatar"
             src="../assets/images/avatar/default_avatar_k.png"
           />
@@ -21,7 +31,11 @@
             <div class="capture-area">
               <div v-for="p in getCaptureInfo(player.side)" :key="p[0]">
                 <div v-if="p[1]" class="capture-block">
-                  <div v-for="index in p[1]" :key="p[0] + index">
+                  <div
+                    class="captured-piece-wrapper"
+                    v-for="index in p[1]"
+                    :key="p[0] + index"
+                  >
                     <img
                       draggable="false"
                       class="captured-piece"
@@ -41,13 +55,13 @@
         </div>
       </div>
     </div>
-    <div class="turn-area scroll-area" id="scroll-turn">
-      <div class="opening">
-        <div>
-          <span :v-if="opening.eco">{{ opening.eco }}</span>
-          {{ opening.name }}
-        </div>
+    <div class="opening">
+      <div>
+        <span :v-if="opening.eco">{{ opening.eco }}</span>
+        {{ opening.name }}
       </div>
+    </div>
+    <div class="turn-area scroll-area" id="scroll-turn">
       <div
         class="turn"
         v-for="turn in shortHistory"
@@ -92,13 +106,22 @@
 import { mapGetters, mapMutations } from "vuex";
 
 export default {
+  created() {
+    this.setHighlight(this.lastMoveIndex);
+  },
+  props: {
+    analysisMode: {
+      type: Boolean,
+      default: false,
+    },
+  },
   data() {
     return {
       highlight: { turn: 1, index: -1 },
-      players: [
-        { name: "Random noob", side: "b" },
-        { name: "Gotham sub", side: "w" },
-      ],
+      // players: [
+      //   { name: "Random noob", side: "b" },
+      //   { name: "Gotham sub", side: "w" },
+      // ],
     };
   },
   computed: {
@@ -110,6 +133,10 @@ export default {
       getMaterialAdvantage: "game/getMaterialAdvantage",
       isInReview: "game/isInReview",
       flipBoard: "settings/getFlipBoard",
+
+      getEngineOn: "analysisSettings/getEngineOn",
+
+      players: "game/getPlayersInfo",
     }),
     shortHistory() {
       const turns = [];
@@ -148,27 +175,7 @@ export default {
   },
   watch: {
     lastMoveIndex(newVal) {
-      const idx = newVal + 1;
-      if (idx > 0) {
-        var turn = Math.ceil(idx / 2);
-        var index = 0;
-        if (idx % 2 === 0) {
-          index++;
-        }
-        this.highlight.turn = turn;
-        this.highlight.index = index;
-        this.$nextTick(() => {
-          const element = document.getElementById("turn" + turn);
-          element.scrollIntoView({
-            behavior: "smooth",
-            block: "center",
-            inline: "nearest",
-          });
-        });
-      } else {
-        this.highlight.turn = 1;
-        this.highlight.index = -1;
-      }
+      this.setHighlight(newVal);
     },
   },
   methods: {
@@ -177,6 +184,9 @@ export default {
       playGame: "game/playGame",
       goBack: "game/goBack",
       goForward: "game/goForward",
+
+      setAnalysisModalOpen: "analysisSettings/setAnalysisModalOpen",
+      setImportModalOpen: "analysisSettings/setImportModalOpen",
     }),
     reviewMove(turn, move) {
       const current = this.highlight;
@@ -193,6 +203,32 @@ export default {
         }
       }
     },
+    setHighlight(moveIndex) {
+      const idx = moveIndex + 1;
+      if (idx > 0) {
+        var turn = Math.ceil(idx / 2);
+        var index = 0;
+        if (idx % 2 === 0) {
+          index++;
+        }
+        this.highlight.turn = turn;
+        this.highlight.index = index;
+        this.$nextTick(() => {
+          const container = document.getElementById("scroll-turn");
+          var scrollLocation =
+            container.firstElementChild.scrollHeight * (turn - 1);
+          const containerHeight = container.clientHeight;
+          const scrollHeight = container.scrollHeight;
+          if (scrollHeight - scrollLocation >= 0.5 * containerHeight) {
+            scrollLocation -= 0.4 * containerHeight;
+          }
+          container.scrollTop = scrollLocation;
+        });
+      } else {
+        this.highlight.turn = 1;
+        this.highlight.index = -1;
+      }
+    },
   },
 };
 </script>
@@ -200,47 +236,72 @@ export default {
 <style  lang="scss" scoped>
 $background-color: #f0f0f0;
 
-$avatar-size: max(2.8rem, 30px);
+$avatar-size: clamp(2.5rem, 3.5vw, 5rem);
 
-$captured-piece-size: min(1.5rem, 20px);
+$captured-piece-size: 1rem;
 
 $opening-color: #525150;
 
 $move-underline-color: #72a4d4;
 $move-second-background: #f8f8f8;
 
-$scrollbar-color: rgb(158, 158, 158);
-
-$button-color: #dbd9d7;
-$button-shadow-color: #bdbcb8;
-$button-hover-color: lightblue;
-
 .side-bar {
   height: 100%;
   width: 100%;
+  min-height: 500px;
   background-color: $background-color;
   display: flex;
   flex-direction: column;
   border-radius: 5px;
+  font-size: clamp(0.7rem, calc($avatar-size/ 3.5), 1rem);
 
   .header-area {
-    height: 25%;
+    // height: 25%;
+    flex-basis: 25%;
     display: flex;
     flex-direction: row;
     align-items: center;
     padding: 10px 0 10px 0;
+    position: relative;
+    button {
+      display: flex;
+      align-items: center;
+    }
+    .side-button-container {
+      button {
+        border: 0;
+        background: none;
+        width: calc(0.6 * $avatar-size);
+        aspect-ratio: 1;
+        position: absolute;
+        right: calc(-0.8 * $avatar-size);
+        img {
+          &:hover {
+            cursor: pointer;
+          }
+        }
+      }
+      .setting-bar {
+        top: calc(0.25 * $avatar-size);
+      }
+      .import {
+        top: calc(1.05 * $avatar-size);
+      }
+    }
     .flip-board {
-      height: calc(0.6 * $avatar-size);
-      width: calc(0.6 * $avatar-size);
+      border: 0;
+      background: none;
+      aspect-ratio: 1;
       margin-left: 10px;
+      margin-right: 5px;
+      border: 0;
       .flip-icon {
-        height: calc(0.5 * $avatar-size);
-        width: calc(0.5 * $avatar-size);
+        width: calc(0.4 * $avatar-size);
+        aspect-ratio: 1;
         transform: rotate(90deg);
         user-select: none;
         &:hover {
           cursor: pointer;
-          transform: rotate(90deg) scale(1.1);
         }
       }
     }
@@ -251,7 +312,6 @@ $button-hover-color: lightblue;
     .player-area {
       display: flex;
       flex-direction: column;
-      padding-left: 5px;
       width: 100%;
       .player {
         display: flex;
@@ -261,21 +321,18 @@ $button-hover-color: lightblue;
           height: $avatar-size;
           width: $avatar-size;
           background-color: white;
-          padding: 7px;
+          padding: calc($avatar-size/8);
           border-radius: 5px;
         }
         .player-info {
           display: flex;
           flex-wrap: wrap;
           flex-direction: column;
-          justify-content: center;
           margin-left: 7.5px;
-          overflow: auto;
           width: 100%;
           .name {
             overflow-wrap: break-word;
             font-weight: 600;
-            font-size: 0.9rem;
           }
           .capture-area {
             display: flex;
@@ -284,20 +341,22 @@ $button-hover-color: lightblue;
             overflow-wrap: normal;
             .capture-block {
               display: flex;
-              margin-right: calc(0.5 * $captured-piece-size);
+              margin-right: calc(0.7 * $captured-piece-size);
               position: relative;
-              .captured-piece {
-                display: inline-block;
-                height: $captured-piece-size;
-                width: $captured-piece-size;
-                margin-right: calc(-0.55 * $captured-piece-size);
-                user-select: none;
+              .captured-piece-wrapper {
+                height: calc(1.1 * $captured-piece-size);
+                .captured-piece {
+                  display: inline-block;
+                  height: $captured-piece-size;
+                  width: $captured-piece-size;
+                  margin-right: calc(-0.35 * $captured-piece-size);
+                  user-select: none;
+                }
               }
             }
             .advantage {
               margin: auto 0 auto 2px;
               font-weight: 400;
-              font-size: 0.85rem;
               color: $opening-color;
             }
           }
@@ -306,51 +365,46 @@ $button-hover-color: lightblue;
     }
   }
 
-  ::-webkit-scrollbar {
-    width: 7px;
-  }
-  ::-webkit-scrollbar-thumb {
-    background-color: $scrollbar-color;
-    border-radius: 10px;
-  }
   .scroll-area {
+    height: 100%;
     overflow: auto; // Gecko based
     overflow: overlay; // WebKit + Blink based
     scrollbar-gutter: stable;
   }
 
+  .opening {
+    padding: 15px 20px 15px 20px;
+    color: $opening-color;
+    overflow-wrap: break-word;
+    top: 0;
+    background-color: white;
+    font-weight: 400;
+    span {
+      font-weight: 600;
+    }
+  }
+
   .turn-area {
-    font-size: 0.9rem;
-    height: 70%;
+    // height: 70%;
+    flex-basis: 60%;
+    flex-grow: 6;
     width: 100%;
     background-color: white;
-    .opening {
-      padding: 15px 20px 15px 20px;
-      color: $opening-color;
-      overflow-wrap: break-word;
-      position: -webkit-sticky; /* Safari */
-      position: sticky;
-      top: 0;
-      background-color: white;
-      font-weight: 400;
-      span {
-        font-weight: 600;
-      }
-    }
+
     .turn {
       display: flex;
       padding: 10px 20px 10px 20px;
-      &:nth-child(2n-1) {
+      &:nth-child(2n) {
         background-color: $move-second-background;
       }
       .turn-num {
-        min-width: 20px;
+        min-width: 25px;
         flex: 0 0 10%;
         font-weight: 400;
       }
       .moves {
         width: 80%;
-        font-weight: 500;
+        font-weight: 600;
         display: flex;
         .move {
           min-width: 30%;
@@ -375,28 +429,37 @@ $button-hover-color: lightblue;
   .button-area {
     padding-top: 10px;
     padding-bottom: 10px;
-    height: 10%;
+    // height: 14%;
+    flex-basis: 15%;
     display: flex;
     justify-content: space-evenly;
     align-items: center;
     .move-button {
       display: inline-flex;
       overflow: hidden;
-      height: 65%;
-      width: 30%;
+      min-height: 30px;
+      max-height: 100px;
+      aspect-ratio: 10/6;
+      width: 27%;
       border-radius: 5px;
-      background-color: $button-color;
+      background-color: var(--button-color);
       border-style: none;
-      box-shadow: 3px 1px $button-shadow-color;
+      box-shadow: 3px 1px var(--button-shadow-color);
+      cursor: pointer;
       .arrow-icon {
         margin: auto;
         height: 80%;
       }
       &:hover {
-        cursor: pointer;
-        background-color: $button-hover-color;
+        background-color: var(--button-hover-color);
       }
     }
+  }
+}
+
+@media (max-width: 50rem) {
+  .side-bar {
+    max-height: 500px;
   }
 }
 </style>

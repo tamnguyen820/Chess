@@ -1,0 +1,236 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap");
+
+@import url("https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap");
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Text:ital@0;1&display=swap');
+
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&display=swap');
+
+#app {
+  height: 100%;
+  width: 100%;
+  font-size: 16px;
+}
+
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-family: "Poppins", sans-serif;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  &:focus-visible {
+    // outline-color: #388fe7;
+    outline: 2px solid #388fe7;
+    border-radius: 2px;
+  }
+}
+
+:root {
+  /* ===== Colors ===== */
+  --body-color: #e4e9f7;
+  --sidebar-color: #fff;
+  --scrollbar-color: rgb(158, 158, 158);
+  --scrollbar-track-color: rgb(233, 233, 233);
+  --primary-color: #695cfe;
+  --primary-color-light: #f6f5ff;
+  --toggle-color: #ddd;
+  --text-color: #707070;
+  --off-white: #fffce9;
+  --button-color: #dbd9d7;
+  --button-shadow-color: #bdbcb8;
+  --button-hover-color: lightblue;
+
+  /* ====== Transition ====== */
+  --tran-01: all 0.1s ease;
+  --tran-02: all 0.2s ease;
+  --tran-03: all 0.3s ease;
+  --tran-04: all 0.4s ease;
+
+  --modal-heading-font-size: clamp(1rem, 1.4vw, 1.75rem);
+  --modal-content-font-size: calc(0.9 * var(--modal-heading-font-size));
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background-color: var(--scrollbar-track-color);
+}
+::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-color);
+}
+
+@supports(scrollbar-color: red blue) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-color) var(--scrollbar-track-color);
+  }
+}
+
+body {
+  // background-color: #312e2b;
+  // height: 97vh;
+  // background-color: var(--body-color);
+  // background-color: #312e2b;
+  background-color: #d7bca1;
+  transition: var(--tran-01);
+}
+
+
+body.dark {
+  --body-color: #312e2b;
+  --sidebar-color: #242526;
+  --primary-color: #3a3b3c;
+  --primary-color-light: #3a3b3c;
+  --toggle-color: #fff;
+  --text-color: #ccc;
+}
+
+.board-container {
+  --move-highlight-color: rgba(255, 255, 0, 0.5);
+
+  // SVGs
+  .blue {
+    --coord-light-color: #788a94; 
+    --coord-dark-color: #dee3e6;
+    --move-highlight-color: rgba(155, 199, 0, 0.41);
+  }
+  .brown {
+    --coord-light-color: #946f51; 
+    --coord-dark-color: #f0d9b5;
+    --move-highlight-color: rgba(155, 199, 0, 0.41);
+  }
+  .danyablue {
+    --coord-light-color: #4b7399; 
+    --coord-dark-color: #eae9d2;
+    --move-highlight-color: rgba(0, 165, 255, 0.5);
+  }
+  .green {
+    --coord-light-color: #6d8753; 
+    --coord-dark-color: #ffffdd;
+    --move-highlight-color: rgba(0, 155, 199, 0.41);
+  }
+  .ic {
+    --coord-light-color: #c1c18e;
+    --coord-dark-color: #ececec;
+  }
+  .neogreen {
+    --coord-light-color: #769656; 
+    --coord-dark-color: #eeeed2;
+    --move-highlight-color: rgba(255, 255, 0, 0.5);
+  }
+  .purple {
+    --coord-light-color: #7d4a8d; 
+    --coord-dark-color: #9f90b0;
+  }
+
+  // Other
+  .blue-marble {
+    --coord-light-color: #6d6c72; 
+    --coord-dark-color: #e8e3da;
+    --move-highlight-color: rgba(240, 219, 134, 0.5);
+  }
+  .blue2 {
+    --coord-light-color: #546f82; 
+    --coord-dark-color: #97b2c7;
+    --move-highlight-color: rgba(155, 199, 0, 0.41);
+  }
+  .blue3 {
+    --coord-light-color: #315991;
+    --coord-dark-color: #d9e0e6;
+    --move-highlight-color: rgba(155, 199, 0, 0.41);
+  }
+  .canvas2 {
+    --coord-light-color: #547388;
+    --coord-dark-color: #d7daeb;
+    --move-highlight-color: rgba(155, 199, 0, 0.41);
+  }
+  .green-plastic {
+    --coord-light-color: #59935d;
+    --coord-dark-color: #f2f9bb;
+    --move-highlight-color: rgba(0, 155, 199, 0.41);
+  }
+  .grey {
+    --coord-light-color: #6d6c6c;
+    --coord-dark-color: #cacaca;
+    --move-highlight-color: rgba(155, 199, 0, 0.41);
+  }
+  .horsey {
+    --coord-light-color: #946f51;
+    --coord-dark-color: #f0d9b5;
+    --move-highlight-color: url("assets/images/board/horsey.last-move.png");
+  }
+  .leather {
+    --coord-light-color: #c28e16;
+    --coord-dark-color: #d1d1c9;
+    --move-highlight-color: rgba(175, 223, 2, 0.41);
+  }
+  .maple {
+    --coord-light-color: #bc7944;
+    --coord-dark-color: #e8ceab;
+    --move-highlight-color: rgba(155, 199, 0, 0.41);
+  }
+  .maple2 {
+    --coord-light-color: #996633;
+    --coord-dark-color: #e2c89f;
+    --move-highlight-color: rgba(155, 199, 0, 0.41);
+  }
+  .marble {
+    --coord-light-color: #455744;
+    --coord-dark-color: #abc7a8;
+    --move-highlight-color: rgba(0, 155, 199, 0.41);
+  }
+  .metal {
+    --coord-light-color: #727272;
+    --coord-dark-color: #c9c9c9;
+    --move-highlight-color: rgba(0, 155, 199, 0.41);
+  }
+  .ncf-board {
+    --coord-light-color: #5477ca;
+    --coord-dark-color: #bbcfff;
+    --move-highlight-color: rgba(155, 199, 0, 0.41);
+  }
+  .newspaper {
+    --coord-light-color: #8d8d8d;
+    --coord-dark-color: #ffffff;
+    --move-highlight-color: rgba(155, 199, 0, 0.41);
+  }
+  .olive {
+    --coord-light-color: #615b4c;
+    --coord-dark-color: #c9c1ae;
+    --move-highlight-color: rgba(155, 199, 0, 0.41);
+  }
+  .pink-pyramid {
+    --coord-light-color: #ed7272;
+    --coord-dark-color: #e8e9b7;
+    --move-highlight-color: rgba(155, 199, 0, 0.41);
+  }
+  .purple-diag {
+    --coord-light-color: #957ab0;
+    --coord-dark-color: #e5daf0;
+    --move-highlight-color: rgba(155, 199, 0, 0.41);
+  }
+  .wood {
+    --coord-light-color: #8f490f;
+    --coord-dark-color: #e2ac61;
+    --move-highlight-color: rgba(165, 211, 1, 0.41);
+  }
+  .wood2 {
+    --coord-light-color: #5f4615;
+    --coord-dark-color: #ad9362;
+    --move-highlight-color: rgba(155, 199, 0, 0.41);
+  }
+  .wood3 {
+    --coord-light-color: #755839;
+    --coord-dark-color: #d0ceca;
+    --move-highlight-color: rgba(155, 199, 0, 0.41);
+  }
+  .wood4 {
+    --coord-light-color: #7b5330;
+    --coord-dark-color: #caaf7d;
+    --move-highlight-color: rgba(155, 199, 0, 0.41);
+  }
+}

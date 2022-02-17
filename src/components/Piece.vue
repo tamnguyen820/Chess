@@ -13,7 +13,7 @@
 export default {
   data() {
     return {
-      srcURL: "./assets/images/piece/",
+      srcURL: "../assets/images/piece/",
       dragging: false,
     };
   },
@@ -48,6 +48,7 @@ export default {
 
 <style lang="scss" scoped>
 .piece {
+  z-index: 1;
   background-repeat: no-repeat;
   background-size: 100%;
   width: 100%;
