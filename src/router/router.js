@@ -1,8 +1,11 @@
 import { createWebHistory, createRouter } from "vue-router";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
+
 
 import Home from "../views/Home.vue"
 import SignIn from "../views/SignIn.vue"
 import LogIn from "../views/LogIn.vue"
+import SignUp from "../views/SignUp.vue"
 import Analysis from "../views/Analysis.vue"
 import ChessGame from "../components/ChessGame.vue";
 
@@ -22,9 +25,17 @@ const router = createRouter({
       component: LogIn
     },
     {
+      path: "/sign-up",
+      name: "sign-up",
+      component: SignUp
+    },
+    {
       path: "/play",
       name: "play",
-      component: ChessGame
+      component: ChessGame,
+      meta: {
+        requiresAuth: true,
+      }
     },
     {
       path: "/analysis",
@@ -32,6 +43,32 @@ const router = createRouter({
       component: Analysis
     },
   ]
+});
+
+const getCurrentUser = () => {
+  return new Promise((resolve, reject) => {
+    const removeListener = onAuthStateChanged(
+      getAuth(),
+      (user) => {
+        removeListener();
+        resolve(user);
+      },
+      reject
+    );
+  });
+}
+
+router.beforeEach(async (to, from, next) => {
+  if (to.matched.some((record) => record.meta.requiresAuth)) {
+    if (await getCurrentUser()) {
+      next();
+    } else {
+      alert("You are not logged in!");
+      next("/");
+    }
+  } else {
+    next();
+  }
 });
 
 export { router };

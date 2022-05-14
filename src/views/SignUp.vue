@@ -1,8 +1,8 @@
 <template>
-  <div class="login-container">
-    <div class="login">
-      <h1>Log in</h1>
-      <form @submit.prevent="login">
+  <div class="signup-container">
+    <div class="signup">
+      <h1>Sign up</h1>
+      <form @submit.prevent="register">
         <div class="text-field">
           <input type="text" required v-model="email" />
           <span></span>
@@ -13,17 +13,13 @@
           <span></span>
           <label for="">Password</label>
         </div>
-        <div class="forgot-pass">
-          <span tabindex="0">Forgot Password?</span>
-        </div>
-        <input type="submit" value="Login" tabindex="0" />
-        <div class="sign-up-link">
-          Not a member?
+        <input type="submit" value="Register" tabindex="0" />
+        <div class="log-in-link">
+          <div><a @click="signInWithGoogle">or Sign in with Google</a></div>
+          One of us?
           <span>
-            <router-link :to="{ name: 'sign-up' }">Sign up</router-link>
+            <router-link :to="{ name: 'profile' }">Log in</router-link>
           </span>
-          or
-          <a href="#">Play anonymously</a>
         </div>
       </form>
     </div>
@@ -31,7 +27,12 @@
 </template>
 
 <script>
-import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
+import {
+  getAuth,
+  createUserWithEmailAndPassword,
+  GoogleAuthProvider,
+  signInWithPopup,
+} from "firebase/auth";
 import { router } from "../router/router.js";
 
 export default {
@@ -42,9 +43,20 @@ export default {
     };
   },
   methods: {
-    login() {
-      signInWithEmailAndPassword(getAuth(), this.email, this.password)
+    register() {
+      createUserWithEmailAndPassword(getAuth(), this.email, this.password)
         .then((data) => {
+          router.push({ name: "home" });
+        })
+        .catch((error) => {
+          alert(error.message);
+        });
+    },
+    signInWithGoogle() {
+      const provider = new GoogleAuthProvider();
+      signInWithPopup(getAuth(), provider)
+        .then((result) => {
+          console.log(result.user);
           router.push({ name: "home" });
         })
         .catch((error) => {
@@ -56,7 +68,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.login-container {
+.signup-container {
   z-index: 1;
   height: 100vh;
   width: 100%;
@@ -64,7 +76,7 @@ export default {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  .login {
+  .signup {
     background: white;
     border-radius: 5px;
     width: 35%;
@@ -120,15 +132,6 @@ export default {
           transition: var(--tran-04);
         }
       }
-      .forgot-pass {
-        margin: 0 0 1.5rem 5px;
-        color: #a6a6a6;
-        span:hover {
-          cursor: pointer;
-          text-decoration: underline;
-          color: #2691d9;
-        }
-      }
       input[type="submit"] {
         width: 100%;
         padding-block: 0.75rem;
@@ -145,7 +148,7 @@ export default {
           outline-offset: 2px;
         }
       }
-      .sign-up-link {
+      .log-in-link {
         margin: 2rem 0;
         text-align: left;
         font-size: 1rem;
@@ -153,6 +156,7 @@ export default {
         a {
           color: #2691d9;
           text-decoration: none;
+          cursor: pointer;
           &:hover {
             text-decoration: underline;
           }

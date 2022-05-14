@@ -98,9 +98,9 @@ export default {
     .control-image {
       aspect-ratio: 1;
       width: clamp(1.75rem, 2.5vw, 3rem);
-      content: url("../assets/images/icon/hamburger-menu.svg");
+      content: url("../assets/images/icon/nav/hamburger-menu.svg");
       &.open {
-        content: url("../assets/images/icon/close-hamburger-menu.svg");
+        content: url("../assets/images/icon/nav/close-hamburger-menu.svg");
       }
     }
   }

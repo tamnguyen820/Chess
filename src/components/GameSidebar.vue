@@ -249,6 +249,7 @@ $move-second-background: #f8f8f8;
   height: 100%;
   width: 100%;
   min-height: 500px;
+  min-width: 300px;
   background-color: $background-color;
   display: flex;
   flex-direction: column;

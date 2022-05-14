@@ -71,7 +71,6 @@ export default {
 <style lang="scss" scoped>
 .game-layout {
   height: 100vh;
-  width: 80%;
   margin: auto;
   z-index: 1;
   @media (max-width: 50rem) {

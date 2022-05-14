@@ -72,9 +72,6 @@ export default {
           "modal-container-" + this.id
         );
         modalContainer.style.animation = "modalIn 0.3s forwards";
-
-        const controlButton = document.getElementById("navigation-control");
-        controlButton.style.zIndex = 1;
       });
     },
     handleKeyUpModal(e) {
